@@ -1394,3 +1394,83 @@ kbd {
 .mono { font-family: var(--font-mono); }
 .muted { color: var(--text-muted); }
 .dim { color: var(--text-dim); }
+
+/* ──────────────────────────────────────────────────────────────────────── */
+/* Images                                                                   */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+.image-tile {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-input);
+  aspect-ratio: 4 / 3;
+  cursor: zoom-in;
+  transition: transform 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.image-tile:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-1px);
+}
+.image-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.image-tile-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s var(--ease), background 0.15s var(--ease);
+}
+.image-tile:hover .image-tile-delete { opacity: 1; }
+.image-tile-delete:hover { background: var(--status-failed); }
+
+.image-drop {
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem 1.25rem;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s var(--ease);
+  margin-top: 0.75rem;
+  position: relative;
+}
+.image-drop:hover, .image-drop.is-drag {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.image-drop input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+.image-viewer {
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+.image-viewer::backdrop { background: rgba(0, 0, 0, 0.85); }
+.image-viewer img { max-width: 90vw; max-height: 90vh; display: block; }

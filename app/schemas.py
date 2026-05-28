@@ -47,6 +47,16 @@ class DecisionOut(BaseModel):
         from_attributes = True
 
 
+class ImageOut(BaseModel):
+    id: int
+    original_filename: str
+    content_type: str
+    caption: str
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+
 class SpeakerStatOut(BaseModel):
     id: int
     speaker_name: str
@@ -96,6 +106,7 @@ class TranscriptDetail(BaseModel):
     code_blocks: List[CodeBlockOut]
     decisions: List[DecisionOut]
     speaker_stats: List[SpeakerStatOut]
+    images: List[ImageOut]
     class Config:
         from_attributes = True
 

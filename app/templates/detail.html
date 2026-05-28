@@ -133,6 +133,39 @@
 </section>
 {% endif %}
 
+<section class="panel fade-up fade-up-4" style="margin-bottom: 1.5rem;" id="imagesPanel">
+  <header class="panel-head">
+    <h3 class="panel-title">Images <span class="panel-title-count">{{ transcript.images|length }}</span></h3>
+  </header>
+  <div class="panel-body">
+    {% if transcript.images %}
+    <div class="image-grid">
+      {% for img in transcript.images %}
+      <figure class="image-tile" onclick="document.getElementById('imgViewer').src='/api/images/{{ img.id }}/file';document.getElementById('imgViewerDialog').showModal();">
+        <img src="/api/images/{{ img.id }}/file" alt="{{ img.original_filename }}" loading="lazy">
+        <button type="button" class="image-tile-delete" aria-label="Delete image"
+                onclick="event.stopPropagation();"
+                hx-delete="/api/images/{{ img.id }}"
+                hx-confirm="Delete this image?"
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful){showToast('Image deleted','success');location.reload();}else{showToast('Could not delete','error');}">×</button>
+      </figure>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <form hx-post="/api/transcripts/{{ transcript.id }}/images"
+          hx-encoding="multipart/form-data"
+          hx-swap="none"
+          hx-on::after-request="if(event.detail.successful){showToast('Image(s) added','success');location.reload();}else{showToast('Upload failed','error');}">
+      <label class="image-drop" id="imageDropZone">
+        <input type="file" name="files" accept="image/*" multiple id="imageFileInput"
+               onchange="if(this.files.length){this.form.requestSubmit();}">
+        <span>Drop images here, or click to attach (PNG, JPG, GIF, WEBP, SVG)</span>
+      </label>
+    </form>
+  </div>
+</section>
+
 {% if transcript.code_blocks %}
 <section class="panel fade-up fade-up-4" style="margin-bottom: 1.5rem;">
   <header class="panel-head">
@@ -166,4 +199,24 @@
 <div id="pollStatus" hx-get="/api/transcripts/{{ transcript.id }}" hx-trigger="every 3s" hx-swap="none"
      hx-on::after-request="if(event.detail.successful) { const s = JSON.parse(event.detail.xhr.response).status; if(s === 'completed' || s === 'failed') location.reload(); }"></div>
 {% endif %}
+
+<dialog id="imgViewerDialog" class="image-viewer" onclick="this.close()">
+  <img id="imgViewer" alt="">
+</dialog>
+
+<script>
+  (function() {
+    const dz = document.getElementById('imageDropZone');
+    if (!dz) return;
+    const input = document.getElementById('imageFileInput');
+    ['dragover', 'dragenter'].forEach(ev => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('is-drag'); }));
+    ['dragleave', 'dragend'].forEach(ev => dz.addEventListener(ev, () => dz.classList.remove('is-drag')));
+    dz.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dz.classList.remove('is-drag');
+      input.files = e.dataTransfer.files;
+      if (input.files.length) input.form.requestSubmit();
+    });
+  })();
+</script>
 {% endblock %}

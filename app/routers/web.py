@@ -55,6 +55,7 @@ async def transcript_detail_page(transcript_id: int, request: Request, db: Sessi
         joinedload(Transcript.code_blocks),
         joinedload(Transcript.decisions),
         joinedload(Transcript.speaker_stats),
+        joinedload(Transcript.images),
     ).filter(Transcript.id == transcript_id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Not found")

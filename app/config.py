@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///data/db.sqlite"
     upload_dir: str = "data/transcripts"
     openrouter_api_key: str = ""
-    ai_model: str = "google/gemini-2.0-flash-001"
+    ai_model: str = "google/gemini-2.5-pro"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     auth_key: str = ""

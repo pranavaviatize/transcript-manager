@@ -1,8 +1,14 @@
+import asyncio
 import json
 import re
-import httpx
+from collections import Counter
 from typing import Optional
-from app.config import get_settings
+
+import httpx
+
+from app.config import Settings, get_settings
+
+WORDS_PER_CHUNK = 200000
 
 EXTRACTION_PROMPT = """You are analyzing a meeting transcript for a software development team. Extract structured information and return ONLY valid JSON — no markdown, no code blocks, no extra text.
 
@@ -47,12 +53,29 @@ async def enrich_transcript(text: str) -> Optional[dict]:
         return None
 
     words = text.split()
-    if len(words) > 8000:
-        text = " ".join(words[:8000]) + "\n\n[... transcript truncated for processing ...]"
 
+    if len(words) <= WORDS_PER_CHUNK:
+        return await _enrich_chunk(text, settings)
+
+    chunks = [
+        " ".join(words[i : i + WORDS_PER_CHUNK])
+        for i in range(0, len(words), WORDS_PER_CHUNK)
+    ]
+    results = await asyncio.gather(*[_enrich_chunk(c, settings) for c in chunks])
+    results = [r for r in results if r]
+
+    if not results:
+        return None
+    if len(results) == 1:
+        return results[0]
+
+    return _merge_chunks(results)
+
+
+async def _enrich_chunk(text: str, settings: Settings) -> Optional[dict]:
     prompt = EXTRACTION_PROMPT.format(transcript=text)
 
-    async with httpx.AsyncClient(timeout=90.0) as client:
+    async with httpx.AsyncClient(timeout=180.0) as client:
         try:
             resp = await client.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -69,7 +92,7 @@ async def enrich_transcript(text: str) -> Optional[dict]:
                         {"role": "user", "content": prompt},
                     ],
                     "temperature": 0.2,
-                    "max_tokens": 3000,
+                    "max_tokens": 16000,
                 },
             )
             resp.raise_for_status()
@@ -82,7 +105,6 @@ async def enrich_transcript(text: str) -> Optional[dict]:
 
             result = json.loads(content)
 
-            # Normalize
             result["participants"] = list(set(p.strip() for p in result.get("participants", []) if p.strip()))
             result["tags"] = list(set(t.strip().lower().replace(" ", "-") for t in result.get("tags", []) if t.strip()))
             result["meeting_type"] = result.get("meeting_type", "general").lower().replace(" ", "-")
@@ -120,3 +142,50 @@ async def enrich_transcript(text: str) -> Optional[dict]:
         except Exception as e:
             print(f"AI enrichment failed: {e}")
             return None
+
+
+def _merge_chunks(results: list[dict]) -> dict:
+    merged = {
+        "title": results[0].get("title", ""),
+        "summary": " ".join(r["summary"] for r in results if r.get("summary")),
+        "meeting_type": Counter(r.get("meeting_type", "general") for r in results).most_common(1)[0][0],
+        "meeting_date": next((r.get("meeting_date") for r in results if r.get("meeting_date")), None),
+        "sentiment": Counter(r.get("sentiment", "neutral") for r in results).most_common(1)[0][0],
+        "participants": [],
+        "tags": sorted({t for r in results for t in r.get("tags", [])}),
+        "action_items": [],
+        "decisions": [],
+        "code_blocks": [],
+    }
+
+    durations = [r["duration_minutes"] for r in results if r.get("duration_minutes")]
+    merged["duration_minutes"] = sum(durations) if durations else None
+
+    seen_participants = set()
+    for r in results:
+        for p in r.get("participants", []):
+            key = p.lower()
+            if key not in seen_participants:
+                seen_participants.add(key)
+                merged["participants"].append(p)
+
+    seen_actions = set()
+    for r in results:
+        for item in r.get("action_items", []):
+            key = item["text"].lower().strip()
+            if key not in seen_actions:
+                seen_actions.add(key)
+                merged["action_items"].append(item)
+
+    seen_decisions = set()
+    for r in results:
+        for d in r.get("decisions", []):
+            key = d["text"].lower().strip()
+            if key not in seen_decisions:
+                seen_decisions.add(key)
+                merged["decisions"].append(d)
+
+    for r in results:
+        merged["code_blocks"].extend(r.get("code_blocks", []))
+
+    return merged

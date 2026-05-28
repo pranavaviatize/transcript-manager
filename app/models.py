@@ -43,6 +43,7 @@ class Transcript(Base):
     code_blocks = relationship("CodeBlock", back_populates="transcript", cascade="all, delete-orphan")
     decisions = relationship("Decision", back_populates="transcript", cascade="all, delete-orphan")
     speaker_stats = relationship("SpeakerStat", back_populates="transcript", cascade="all, delete-orphan")
+    images = relationship("Image", back_populates="transcript", cascade="all, delete-orphan", order_by="Image.created_at")
 
     __table_args__ = (
         Index("idx_transcripts_status", "status"),
@@ -107,6 +108,19 @@ class Decision(Base):
     category = Column(String(50), default="general")  # architecture, process, product, tech-stack, timeline
     created_at = Column(DateTime, default=datetime.utcnow)
     transcript = relationship("Transcript", back_populates="decisions")
+
+
+class Image(Base):
+    __tablename__ = "transcript_images"
+
+    id = Column(Integer, primary_key=True, index=True)
+    transcript_id = Column(Integer, ForeignKey("transcripts.id", ondelete="CASCADE"), nullable=False)
+    storage_path = Column(String(500), nullable=False)
+    original_filename = Column(String(255), nullable=False)
+    content_type = Column(String(100), nullable=False)
+    caption = Column(String(500), default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    transcript = relationship("Transcript", back_populates="images")
 
 
 class SpeakerStat(Base):

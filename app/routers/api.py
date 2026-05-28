@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request, BackgroundTasks
-from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse, FileResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc, asc, or_, and_, text
 from typing import List, Optional
@@ -7,12 +7,13 @@ from datetime import datetime
 import os
 import io
 import logging
+import uuid
 
 from app.database import get_db, SessionLocal
-from app.models import Transcript, Participant, Tag, ActionItem, CodeBlock, Decision, SpeakerStat
+from app.models import Transcript, Participant, Tag, ActionItem, CodeBlock, Decision, SpeakerStat, Image
 from app.schemas import (
     TranscriptListItem, TranscriptDetail, TranscriptUpdate,
-    TagOut, ParticipantOut, ActionItemOut, StatsOut
+    TagOut, ParticipantOut, ActionItemOut, StatsOut, ImageOut,
 )
 from app.services.file_processor import process_transcript, save_upload
 from app.services.ai_enricher import enrich_transcript
@@ -384,6 +385,7 @@ async def get_transcript(transcript_id: int, db: Session = Depends(get_db)):
         joinedload(Transcript.code_blocks),
         joinedload(Transcript.decisions),
         joinedload(Transcript.speaker_stats),
+        joinedload(Transcript.images),
     ).filter(Transcript.id == transcript_id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Not found")
@@ -417,12 +419,83 @@ async def update_transcript(
 
 @router.delete("/api/transcripts/{transcript_id}")
 async def delete_transcript(transcript_id: int, db: Session = Depends(get_db)):
-    t = db.query(Transcript).filter(Transcript.id == transcript_id).first()
+    t = db.query(Transcript).options(joinedload(Transcript.images)).filter(Transcript.id == transcript_id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Not found")
     if os.path.exists(t.storage_path):
         os.remove(t.storage_path)
+    for img in t.images:
+        if os.path.exists(img.storage_path):
+            os.remove(img.storage_path)
     db.delete(t)
+    db.commit()
+    return {"ok": True}
+
+
+ALLOWED_IMAGE_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/svg+xml"}
+IMAGE_EXT_FOR_TYPE = {
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+    "image/svg+xml": ".svg",
+}
+
+
+@router.post("/api/transcripts/{transcript_id}/images", response_model=List[ImageOut])
+async def upload_images(
+    transcript_id: int,
+    files: List[UploadFile] = File(...),
+    db: Session = Depends(get_db),
+):
+    t = db.query(Transcript).filter(Transcript.id == transcript_id).first()
+    if not t:
+        raise HTTPException(status_code=404, detail="Not found")
+
+    image_dir = os.path.join("data", "images", str(transcript_id))
+    os.makedirs(image_dir, exist_ok=True)
+
+    saved: List[Image] = []
+    for f in files:
+        content_type = (f.content_type or "").lower()
+        if content_type not in ALLOWED_IMAGE_TYPES:
+            raise HTTPException(status_code=400, detail=f"Unsupported image type: {content_type or 'unknown'}")
+        ext = IMAGE_EXT_FOR_TYPE[content_type]
+        name = f"{uuid.uuid4().hex}{ext}"
+        path = os.path.join(image_dir, name)
+        with open(path, "wb") as out:
+            out.write(await f.read())
+        img = Image(
+            transcript_id=transcript_id,
+            storage_path=path,
+            original_filename=f.filename or name,
+            content_type=content_type,
+        )
+        db.add(img)
+        saved.append(img)
+    db.commit()
+    for img in saved:
+        db.refresh(img)
+    return saved
+
+
+@router.get("/api/images/{image_id}/file")
+async def serve_image(image_id: int, db: Session = Depends(get_db)):
+    img = db.query(Image).filter(Image.id == image_id).first()
+    if not img or not os.path.exists(img.storage_path):
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(img.storage_path, media_type=img.content_type, filename=img.original_filename)
+
+
+@router.delete("/api/images/{image_id}")
+async def delete_image(image_id: int, db: Session = Depends(get_db)):
+    img = db.query(Image).filter(Image.id == image_id).first()
+    if not img:
+        raise HTTPException(status_code=404, detail="Not found")
+    if os.path.exists(img.storage_path):
+        os.remove(img.storage_path)
+    db.delete(img)
     db.commit()
     return {"ok": True}
 
