@@ -2,7 +2,7 @@ import asyncio
 import json
 import re
 from collections import Counter
-from typing import Optional
+from typing import Optional, Sequence
 
 import httpx
 
@@ -14,7 +14,7 @@ EXTRACTION_PROMPT = """You are analyzing a meeting transcript for a software dev
 
 Transcript:
 {transcript}
-
+{context_block}
 Return this exact JSON structure:
 {{
   "title": "Concise descriptive title (max 80 chars)",
@@ -38,30 +38,46 @@ Return this exact JSON structure:
 
 Rules:
 - meeting_type: Infer from content. Standups have updates/blockers. Code reviews discuss PRs. Architecture discusses system design. Planning has sprint/tasks. Retros have what-went-well. 1-1s are personal. Demos show features.
-- tags: Use lowercase, hyphenated. Include: frontend, backend, api, database, deployment, bug, feature, refactor, performance, security, testing, ui-ux, devops, mobile, ai-ml, infrastructure, documentation, meeting-type (standup, retro, etc.)
+- tags: Use lowercase, hyphenated. When an existing tag from the "Existing tags" list above fits a topic, REUSE it — do not invent a near-synonym (e.g. don't add "log-book" if "logbook" already exists, don't add "contracts" if "contract-management" already exists). You CAN add a new tag when a topic is genuinely novel and none of the existing tags fit. Final tag list can mix reused and new tags. Aim for 3-8 relevant tags. Fallback suggestions if you need them: frontend, backend, api, database, deployment, bug, feature, refactor, performance, security, testing, ui-ux, devops, mobile, ai-ml, infrastructure, documentation.
 - action_items: Only concrete tasks with clear owners when possible. Skip vague "follow up" without specifics.
 - decisions: Capture architectural choices, process changes, tech stack decisions, timeline commitments.
 - code_blocks: Extract any code snippets discussed (functions, configs, SQL queries, CLI commands). Include the language if obvious.
-- participants: Infer from speaker labels and mentions. Use first names for frequent collaborators, full names for clarity.
+- participants: Infer from speaker labels and mentions. If a name in the "Known participants" list above refers to the same person, use that EXACT spelling — do not produce a variant (e.g. don't write "Pranav" if "Pranav S" is already known).
 - If transcript is short or unclear, use "general" for meeting_type and minimal tags.
 """
 
 
-async def enrich_transcript(text: str) -> Optional[dict]:
+def _format_context(known_tags: Optional[Sequence[str]], known_participants: Optional[Sequence[str]]) -> str:
+    parts = []
+    if known_tags:
+        parts.append("Existing tags (PREFER reusing these when one fits):\n" + ", ".join(sorted(known_tags)))
+    if known_participants:
+        parts.append("Known participants (use these EXACT names when referring to the same person):\n" + ", ".join(sorted(known_participants)))
+    if not parts:
+        return ""
+    return "\nContext:\n" + "\n\n".join(parts) + "\n"
+
+
+async def enrich_transcript(
+    text: str,
+    known_tags: Optional[Sequence[str]] = None,
+    known_participants: Optional[Sequence[str]] = None,
+) -> Optional[dict]:
     settings = get_settings()
     if not settings.openrouter_api_key:
         return None
 
     words = text.split()
+    context_block = _format_context(known_tags, known_participants)
 
     if len(words) <= WORDS_PER_CHUNK:
-        return await _enrich_chunk(text, settings)
+        return await _enrich_chunk(text, settings, context_block)
 
     chunks = [
         " ".join(words[i : i + WORDS_PER_CHUNK])
         for i in range(0, len(words), WORDS_PER_CHUNK)
     ]
-    results = await asyncio.gather(*[_enrich_chunk(c, settings) for c in chunks])
+    results = await asyncio.gather(*[_enrich_chunk(c, settings, context_block) for c in chunks])
     results = [r for r in results if r]
 
     if not results:
@@ -72,8 +88,8 @@ async def enrich_transcript(text: str) -> Optional[dict]:
     return _merge_chunks(results)
 
 
-async def _enrich_chunk(text: str, settings: Settings) -> Optional[dict]:
-    prompt = EXTRACTION_PROMPT.format(transcript=text)
+async def _enrich_chunk(text: str, settings: Settings, context_block: str = "") -> Optional[dict]:
+    prompt = EXTRACTION_PROMPT.format(transcript=text, context_block=context_block)
 
     async with httpx.AsyncClient(timeout=180.0) as client:
         try:

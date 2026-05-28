@@ -27,13 +27,14 @@
       <ul>
         <li><a href="/" class="nav-link {% if request.url.path == '/' %}is-active{% endif %}"><span class="nav-num">01</span> Dashboard</a></li>
         <li><a href="/transcripts" class="nav-link {% if request.url.path == '/transcripts' %}is-active{% endif %}"><span class="nav-num">02</span> All Transcripts</a></li>
+        <li><a href="/tags" class="nav-link {% if request.url.path == '/tags' %}is-active{% endif %}"><span class="nav-num">03</span> Manage Tags</a></li>
       </ul>
 
       <div class="nav-label">Extracts</div>
       <ul>
-        <li><a href="/transcripts?has_action_items=true" class="nav-link"><span class="nav-num">03</span> Action Items</a></li>
-        <li><a href="/transcripts?has_decisions=true" class="nav-link"><span class="nav-num">04</span> Decisions</a></li>
-        <li><a href="/transcripts?has_code=true" class="nav-link"><span class="nav-num">05</span> Code Snippets</a></li>
+        <li><a href="/transcripts?has_action_items=true" class="nav-link"><span class="nav-num">04</span> Action Items</a></li>
+        <li><a href="/transcripts?has_decisions=true" class="nav-link"><span class="nav-num">05</span> Decisions</a></li>
+        <li><a href="/transcripts?has_code=true" class="nav-link"><span class="nav-num">06</span> Code Snippets</a></li>
       </ul>
 
       {% if all_tags %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Tags · Transcript Hub{% endblock %}
+
+{% block content %}
+<header class="page-head fade-up">
+  <div class="page-eyebrow"><span>Library</span> · <span>Tags</span></div>
+  <h1 class="detail-title">Tags</h1>
+  <p class="muted" style="max-width: 60ch;">Every tag in your library. Renaming or recoloring here propagates to every transcript using it. Deleting a tag removes it from all transcripts but keeps the transcripts themselves.</p>
+</header>
+
+<section class="card fade-up fade-up-1" style="margin-bottom: 1.5rem;">
+  <form class="tag-create-form"
+        hx-post="/api/tags"
+        hx-swap="none"
+        hx-on::after-request="if(event.detail.successful){this.reset();showToast('Tag created','success');location.reload();}else{const msg=JSON.parse(event.detail.xhr.response||'{}').detail||'Could not create tag';showToast(msg,'error');}">
+    <label style="display: block; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.5rem;">Add a new tag</label>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+      <input name="name" placeholder="e.g. onboarding, dx, q2-roadmap" required
+             pattern="[a-z0-9\-]+" title="lowercase letters, numbers, and hyphens only"
+             style="flex: 1; padding: 0.5rem 0.75rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: var(--font-mono); font-size: 13px;">
+      <input type="color" name="color" value="#e8a444"
+             style="width: 40px; height: 38px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-input); cursor: pointer;"
+             title="Pick a color">
+      <button type="submit" class="btn btn-primary">Add tag</button>
+    </div>
+  </form>
+</section>
+
+<section class="panel fade-up fade-up-2">
+  <header class="panel-head">
+    <h3 class="panel-title">All Tags <span class="panel-title-count">{{ tags|length }}</span></h3>
+  </header>
+  <div class="panel-body" style="padding: 0;">
+    {% if tags %}
+    <table class="tag-table">
+      <thead>
+        <tr>
+          <th style="width: 32%;">Tag</th>
+          <th style="width: 8%;">Color</th>
+          <th style="width: 12%;">Source</th>
+          <th style="width: 18%;">Used by</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tag in tags %}
+        <tr data-tag-id="{{ tag.id }}">
+          <td>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="pill tag-preview" style="--pill-color: {{ tag.color }}">{{ tag.name }}</span>
+              <input class="tag-name-input"
+                     name="name" value="{{ tag.name }}"
+                     pattern="[a-z0-9\-]+" title="lowercase letters, numbers, and hyphens only"
+                     hx-patch="/api/tags/{{ tag.id }}" hx-trigger="change" hx-swap="none"
+                     hx-on::after-request="if(event.detail.successful){const row=this.closest('tr');row.querySelector('.tag-preview').textContent=this.value;showToast('Renamed','success');}else{const msg=JSON.parse(event.detail.xhr.response||'{}').detail||'Could not rename';showToast(msg,'error');this.value=this.defaultValue;}">
+            </div>
+          </td>
+          <td>
+            <input type="color" value="{{ tag.color }}"
+                   name="color"
+                   hx-patch="/api/tags/{{ tag.id }}" hx-trigger="change" hx-swap="none"
+                   hx-on::after-request="if(event.detail.successful){this.closest('tr').querySelector('.tag-preview').style.setProperty('--pill-color',this.value);showToast('Color updated','success');}"
+                   style="width: 32px; height: 32px; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: transparent; cursor: pointer;">
+          </td>
+          <td>
+            {% if tag.is_auto %}
+            <span class="chip" title="Created by AI enrichment">AI</span>
+            {% else %}
+            <span class="chip chip-dot" style="--chip-dot-color: var(--accent);" title="Created manually">User</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if tag.transcripts %}
+            <a href="/transcripts?tags={{ tag.name }}" class="usage-link">{{ tag.transcripts|length }} transcript{{ 's' if tag.transcripts|length != 1 else '' }} →</a>
+            {% else %}
+            <span class="dim">unused</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right;">
+            <button class="btn btn-danger btn-sm"
+                    hx-delete="/api/tags/{{ tag.id }}"
+                    hx-confirm="{% if tag.transcripts %}Delete '{{ tag.name }}'? It will be removed from {{ tag.transcripts|length }} transcript(s).{% else %}Delete '{{ tag.name }}'?{% endif %}"
+                    hx-swap="none"
+                    hx-on::after-request="if(event.detail.successful){this.closest('tr').remove();showToast('Tag deleted','success');}else{showToast('Could not delete','error');}">Delete</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="padding: 3rem 2rem; text-align: center;" class="muted">
+      No tags yet. Upload a transcript to let the AI suggest tags, or add one above.
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

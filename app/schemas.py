@@ -12,6 +12,16 @@ class TagOut(BaseModel):
         from_attributes = True
 
 
+class TagCreate(BaseModel):
+    name: str
+    color: Optional[str] = None
+
+
+class TagUpdate(BaseModel):
+    name: Optional[str] = None
+    color: Optional[str] = None
+
+
 class ParticipantOut(BaseModel):
     id: int
     name: str

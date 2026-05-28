@@ -1474,3 +1474,59 @@ kbd {
 }
 .image-viewer::backdrop { background: rgba(0, 0, 0, 0.85); }
 .image-viewer img { max-width: 90vw; max-height: 90vh; display: block; }
+
+/* ──────────────────────────────────────────────────────────────────────── */
+/* Tags admin                                                               */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+.tag-table { width: 100%; border-collapse: collapse; }
+.tag-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-input);
+}
+.tag-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  vertical-align: middle;
+}
+.tag-table tbody tr:hover { background: var(--bg-input); }
+.tag-table tbody tr:last-child td { border-bottom: none; }
+
+.tag-name-input {
+  padding: 0.4rem 0.6rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  min-width: 180px;
+  transition: border-color 0.15s var(--ease);
+}
+.tag-name-input:hover { border-color: var(--border-strong); }
+.tag-name-input:focus { outline: none; border-color: var(--accent); background: var(--bg-card-hover); }
+
+.usage-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  transition: color 0.15s var(--ease);
+}
+.usage-link:hover { color: var(--accent-hover); text-decoration: underline; }
+
+.btn-sm {
+  font-size: 12px;
+  padding: 0.35rem 0.75rem;
+}
+
+.tag-create-form { display: block; }

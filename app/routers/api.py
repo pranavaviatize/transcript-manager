@@ -13,7 +13,7 @@ from app.database import get_db, SessionLocal
 from app.models import Transcript, Participant, Tag, ActionItem, CodeBlock, Decision, SpeakerStat, Image
 from app.schemas import (
     TranscriptListItem, TranscriptDetail, TranscriptUpdate,
-    TagOut, ParticipantOut, ActionItemOut, StatsOut, ImageOut,
+    TagOut, TagCreate, TagUpdate, ParticipantOut, ActionItemOut, StatsOut, ImageOut,
 )
 from app.services.file_processor import process_transcript, save_upload
 from app.services.ai_enricher import enrich_transcript
@@ -32,7 +32,13 @@ async def _enrich_in_background(transcript_id: int):
         if not transcript:
             return
 
-        result = await enrich_transcript(transcript.content_clean)
+        known_tags = [name for (name,) in db.query(Tag.name).all()]
+        known_participants = [name for (name,) in db.query(Participant.name).all()]
+        result = await enrich_transcript(
+            transcript.content_clean,
+            known_tags=known_tags,
+            known_participants=known_participants,
+        )
         if not result:
             transcript.status = "failed"
             db.commit()
@@ -221,7 +227,13 @@ async def enrich_transcript_endpoint(transcript_id: int, db: Session = Depends(g
     transcript.status = "processing"
     db.commit()
 
-    result = await enrich_transcript(transcript.content_clean)
+    known_tags = [name for (name,) in db.query(Tag.name).all()]
+    known_participants = [name for (name,) in db.query(Participant.name).all()]
+    result = await enrich_transcript(
+        transcript.content_clean,
+        known_tags=known_tags,
+        known_participants=known_participants,
+    )
     if not result:
         transcript.status = "failed"
         db.commit()
@@ -538,9 +550,73 @@ async def toggle_action_item(action_item_id: int, db: Session = Depends(get_db))
     return {"completed": ai.completed}
 
 
+TAG_PALETTE = ["#e8a444", "#5fa676", "#b489d4", "#6b9bd4", "#d56b6b", "#d4a04a", "#8eb8a6", "#c98ab0"]
+
+
+def _normalize_tag_name(name: str) -> str:
+    return name.strip().lower().replace(" ", "-")
+
+
 @router.get("/api/tags", response_model=List[TagOut])
 async def list_tags(db: Session = Depends(get_db)):
     return db.query(Tag).order_by(Tag.name).all()
+
+
+@router.post("/api/tags", response_model=TagOut)
+async def create_tag(
+    name: str = Form(...),
+    color: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+):
+    name = _normalize_tag_name(name)
+    if not name:
+        raise HTTPException(status_code=400, detail="Tag name required")
+    existing = db.query(Tag).filter(Tag.name == name).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Tag already exists")
+    if not color:
+        color = TAG_PALETTE[db.query(func.count(Tag.id)).scalar() % len(TAG_PALETTE)]
+    tag = Tag(name=name, color=color, is_auto=False)
+    db.add(tag)
+    db.commit()
+    db.refresh(tag)
+    return tag
+
+
+@router.patch("/api/tags/{tag_id}", response_model=TagOut)
+async def update_tag(
+    tag_id: int,
+    name: Optional[str] = Form(None),
+    color: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+):
+    tag = db.query(Tag).filter(Tag.id == tag_id).first()
+    if not tag:
+        raise HTTPException(status_code=404, detail="Not found")
+    if name is not None:
+        new_name = _normalize_tag_name(name)
+        if not new_name:
+            raise HTTPException(status_code=400, detail="Tag name required")
+        if new_name != tag.name:
+            clash = db.query(Tag).filter(Tag.name == new_name, Tag.id != tag_id).first()
+            if clash:
+                raise HTTPException(status_code=409, detail="Another tag with this name already exists")
+            tag.name = new_name
+    if color is not None and color != "":
+        tag.color = color
+    db.commit()
+    db.refresh(tag)
+    return tag
+
+
+@router.delete("/api/tags/{tag_id}")
+async def delete_tag(tag_id: int, db: Session = Depends(get_db)):
+    tag = db.query(Tag).filter(Tag.id == tag_id).first()
+    if not tag:
+        raise HTTPException(status_code=404, detail="Not found")
+    db.delete(tag)
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("/api/participants", response_model=List[ParticipantOut])

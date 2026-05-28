@@ -46,6 +46,17 @@ async def transcripts_page(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("transcripts.html", ctx)
 
 
+@router.get("/tags", response_class=HTMLResponse)
+async def tags_page(request: Request, db: Session = Depends(get_db)):
+    tags = db.query(Tag).options(joinedload(Tag.transcripts)).order_by(Tag.name).all()
+    ctx = _get_common_context(db)
+    ctx.update({
+        "request": request,
+        "tags": tags,
+    })
+    return templates.TemplateResponse("tags.html", ctx)
+
+
 @router.get("/transcripts/{transcript_id}", response_class=HTMLResponse)
 async def transcript_detail_page(transcript_id: int, request: Request, db: Session = Depends(get_db)):
     t = db.query(Transcript).options(
