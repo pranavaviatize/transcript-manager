@@ -1,0 +1,21 @@
+{% if items %}
+{% set context = 'list' %}
+<div class="extract-list">
+  {% for d in items %}
+    {% include 'partials/decision_item_row.html' %}
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty">
+  <div class="empty-mark">✻</div>
+  {% if has_active_filter %}
+  <h3 class="empty-title">No decisions match</h3>
+  <p class="empty-sub">Clear the category filter or search term to see more.</p>
+  <button class="btn btn-ghost" onclick="document.querySelectorAll('.filter-rail select, .filter-rail input[type=search]').forEach(el => { el.value=''; }); htmx.trigger('[name=search]', 'search');">Clear filters</button>
+  {% else %}
+  <h3 class="empty-title">No decisions yet</h3>
+  <p class="empty-sub">Upload a transcript and AI will lift out architectural, process, and product decisions.</p>
+  <button class="btn btn-primary" onclick="document.getElementById('uploadModal').showModal()">Upload Transcript</button>
+  {% endif %}
+</div>
+{% endif %}

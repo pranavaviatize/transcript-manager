@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Action Items · Transcript Hub{% endblock %}
+
+{% block content %}
+<header class="page-head fade-up">
+  <div>
+    <div class="page-eyebrow">Across the Archive</div>
+    <h1 class="page-title">Action Items</h1>
+    <p class="page-subtitle">Every commitment surfaced from every transcript. Tick them off here and the change persists everywhere.</p>
+  </div>
+  <div class="page-actions">
+    <a href="/transcripts?has_action_items=true" class="btn btn-ghost">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M4 8h8M6 12h4"/></svg>
+      View Transcripts
+    </a>
+  </div>
+</header>
+
+<div class="filter-rail fade-up fade-up-1">
+  <div class="search-box">
+    <input type="search" name="search" placeholder="Search action items…"
+           hx-get="/partials/action-items-list" hx-target="#extractList" hx-trigger="keyup changed delay:300ms, search"
+           hx-include="[name='search'],[name='status'],[name='assignee'],[name='priority'],[name='sort_by'],[name='sort_order']"
+           hx-indicator="#listSpinner">
+  </div>
+  <select name="status" aria-label="Status"
+          hx-get="/partials/action-items-list" hx-target="#extractList" hx-trigger="change"
+          hx-include="[name='search'],[name='status'],[name='assignee'],[name='priority'],[name='sort_by'],[name='sort_order']">
+    <option value="">All Status</option>
+    <option value="pending">Pending</option>
+    <option value="completed">Completed</option>
+  </select>
+  <select name="assignee" aria-label="Assignee"
+          hx-get="/partials/action-items-list" hx-target="#extractList" hx-trigger="change"
+          hx-include="[name='search'],[name='status'],[name='assignee'],[name='priority'],[name='sort_by'],[name='sort_order']">
+    <option value="">All Assignees</option>
+    {% for a in assignees %}
+    <option value="{{ a }}">{{ a }}</option>
+    {% endfor %}
+  </select>
+  <select name="priority" aria-label="Priority"
+          hx-get="/partials/action-items-list" hx-target="#extractList" hx-trigger="change"
+          hx-include="[name='search'],[name='status'],[name='assignee'],[name='priority'],[name='sort_by'],[name='sort_order']">
+    <option value="">All Priorities</option>
+    <option value="urgent">Urgent</option>
+    <option value="high">High</option>
+    <option value="normal">Normal</option>
+    <option value="low">Low</option>
+  </select>
+  <select name="sort_by" aria-label="Sort by"
+          hx-get="/partials/action-items-list" hx-target="#extractList" hx-trigger="change"
+          hx-include="[name='search'],[name='status'],[name='assignee'],[name='priority'],[name='sort_by'],[name='sort_order']">
+    <option value="created_at">Sort: Added</option>
+    <option value="priority">Sort: Priority</option>
+  </select>
+  <select name="sort_order" aria-label="Sort order"
+          hx-get="/partials/action-items-list" hx-target="#extractList" hx-trigger="change"
+          hx-include="[name='search'],[name='status'],[name='assignee'],[name='priority'],[name='sort_by'],[name='sort_order']">
+    <option value="desc">Newest</option>
+    <option value="asc">Oldest</option>
+  </select>
+</div>
+
+<div class="fade-up fade-up-2">
+  <span id="listSpinner" class="htmx-indicator inline-spinner" style="margin-bottom: 0.5rem; display: none;">Loading…</span>
+  <div id="extractList" hx-get="/partials/action-items-list" hx-trigger="load" hx-target="#extractList">
+    <div class="skeleton">
+      {% for i in range(5) %}
+      <div class="skeleton-row">
+        <div class="skeleton-block sk-tag" style="height: 0.8rem; width: 50px;"></div>
+        <div style="width: 100%;">
+          <div class="skeleton-block sk-h"></div>
+          <div class="skeleton-block sk-h2"></div>
+        </div>
+        <div class="skeleton-block sk-tag"></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

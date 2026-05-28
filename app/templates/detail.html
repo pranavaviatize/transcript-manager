@@ -100,10 +100,8 @@
     </header>
     <div class="panel-body">
       {% for d in transcript.decisions %}
-      <div class="decision-item">
-        <div class="decision-cat">{{ d.category }}</div>
-        <div class="decision-text">{{ d.text }}</div>
-      </div>
+        {% set context = 'detail' %}
+        {% include 'partials/decision_item_row.html' %}
       {% endfor %}
     </div>
   </section>
@@ -117,17 +115,8 @@
   </header>
   <div class="panel-body">
     {% for ai in transcript.action_items %}
-    <label class="action-item {% if ai.completed %}action-completed{% endif %}">
-      <input type="checkbox" class="action-checkbox" {% if ai.completed %}checked{% endif %}
-             hx-patch="/api/action-items/{{ ai.id }}" hx-swap="none"
-             hx-on::after-request="this.closest('.action-item').classList.toggle('action-completed', this.checked)">
-      <span class="action-text">{{ ai.text }}</span>
-      <span class="action-tags">
-        {% if ai.assignee %}<span class="chip chip-dot" style="--chip-dot-color: var(--accent)">@{{ ai.assignee }}</span>{% endif %}
-        {% if ai.priority == 'high' %}<span class="pill" style="--pill-color: var(--color-priority-high)">High</span>{% endif %}
-        {% if ai.priority == 'urgent' %}<span class="pill" style="--pill-color: var(--color-priority-urgent)">Urgent</span>{% endif %}
-      </span>
-    </label>
+      {% set context = 'detail' %}
+      {% include 'partials/action_item_row.html' %}
     {% endfor %}
   </div>
 </section>

@@ -1,0 +1,31 @@
+{# Inline edit form for a decision. Vars: d, context. #}
+<form class="decision-item decision-item-editing" id="decision-item-{{ d.id }}"
+      hx-post="/api/decisions/{{ d.id }}/update"
+      hx-target="#decision-item-{{ d.id }}"
+      hx-swap="outerHTML">
+  <input type="hidden" name="context" value="{{ context|default('list') }}">
+  <div class="decision-body">
+    <div class="edit-row edit-row-inline" style="margin-bottom:0.5rem;">
+      <select name="category" class="edit-input edit-input-cat">
+        {% set cats = ['architecture', 'process', 'product', 'tech-stack', 'timeline', 'general'] %}
+        {% for c in cats %}
+        <option value="{{ c }}" {% if d.category == c %}selected{% endif %}>{{ c.replace('-', ' ')|title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="edit-row">
+      <textarea name="text" class="edit-text" rows="3" required>{{ d.text }}</textarea>
+    </div>
+  </div>
+  <div class="row-actions edit-actions">
+    <button type="submit" class="row-action-btn row-action-save" aria-label="Save">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3.5 4L13 5"/></svg>
+    </button>
+    <button type="button" class="row-action-btn" aria-label="Cancel"
+            hx-get="/partials/decisions/{{ d.id }}?context={{ context|default('list') }}"
+            hx-target="#decision-item-{{ d.id }}"
+            hx-swap="outerHTML">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+    </button>
+  </div>
+</form>

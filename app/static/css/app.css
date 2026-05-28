@@ -1185,6 +1185,9 @@ kbd {
 }
 
 .decision-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
   padding: 0.85rem 1rem;
   background: var(--bg-input);
   border: 1px solid var(--border);
@@ -1192,6 +1195,7 @@ kbd {
   border-radius: var(--radius-sm);
   margin-bottom: 0.5rem;
 }
+.decision-item .decision-body { flex: 1; min-width: 0; }
 .decision-cat {
   font-family: var(--font-mono);
   font-size: 9.5px;
@@ -1479,6 +1483,27 @@ kbd {
 /* Tags admin                                                               */
 /* ──────────────────────────────────────────────────────────────────────── */
 
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+.bulk-actions[hidden] { display: none; }
+.bulk-actions-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+.tag-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  vertical-align: middle;
+}
+
 .tag-table { width: 100%; border-collapse: collapse; }
 .tag-table th {
   text-align: left;
@@ -1530,3 +1555,179 @@ kbd {
 }
 
 .tag-create-form { display: block; }
+
+/* ──────────────────────────────────────────────────────────────────────── */
+/* Extract index pages (action items, decisions, code snippets)           */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+/* Sidebar count chip on extract nav links */
+.nav-link-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  padding: 1px 6px;
+  background: var(--bg-card);
+  border-radius: 999px;
+  line-height: 1.4;
+}
+.nav-link.is-active .nav-link-count { color: var(--text); background: var(--bg-card-hover); }
+
+/* Shared list wrapper */
+.extract-list { display: flex; flex-direction: column; gap: 0; }
+
+/* Action item row variant — extends .action-item with a body column for text + source */
+.action-item .action-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.action-item .action-text-row { display: flex; align-items: flex-start; gap: 0.75rem; flex-wrap: wrap; }
+.action-item .action-text-row .action-text { flex: 1; min-width: 12rem; }
+
+/* Decision row variant — adds source link below text */
+.decision-item .source-link { margin-top: 0.5rem; }
+
+/* Source attribution — one pattern, three places */
+.source-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s var(--ease);
+  align-self: flex-start;
+}
+.source-link:hover { color: var(--accent); }
+.source-link .source-serial {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.source-link:hover .source-serial { color: var(--accent); }
+.source-link .source-title { font-weight: 400; }
+.source-link .source-arrow { transition: transform 0.15s var(--ease); }
+.source-link:hover .source-arrow { transform: translateX(2px); }
+
+/* Action item staleness badge — surfaces what's slipping */
+.age-badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.age-badge.age-warm   { color: var(--color-action); opacity: 0.85; }
+.age-badge.age-stale  { color: var(--color-priority-high); }
+.age-badge.age-cold   { color: var(--color-priority-urgent); background: color-mix(in oklab, var(--color-priority-urgent) 8%, transparent); }
+
+/* ──────────────────────────────────────────────────────────────────────── */
+/* Inline edit / delete affordances                                       */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+/* Existing .action-item / .decision-item layouts get a slot for row-actions */
+.action-item { position: relative; }
+.decision-item { position: relative; }
+
+.row-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s var(--ease);
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-left: 0.5rem;
+}
+.action-item:hover .row-actions,
+.decision-item:hover .row-actions,
+.action-item:focus-within .row-actions,
+.decision-item:focus-within .row-actions { opacity: 1; }
+
+.row-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.12s var(--ease);
+}
+.row-action-btn:hover {
+  color: var(--text-strong);
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+.row-action-btn.row-action-danger:hover {
+  color: var(--color-priority-urgent);
+  border-color: color-mix(in oklab, var(--color-priority-urgent) 40%, transparent);
+}
+.row-action-btn.row-action-save {
+  color: var(--accent);
+  border-color: var(--accent-border);
+}
+.row-action-btn.row-action-save:hover {
+  background: var(--accent);
+  color: #1a1207;
+  border-color: var(--accent);
+}
+
+/* Inline edit form layout — mimics the row it replaces */
+.action-item-editing,
+.decision-item-editing {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+}
+.decision-item-editing { border-left: 2px solid var(--color-decision); }
+
+.action-item-editing .row-actions,
+.decision-item-editing .row-actions { opacity: 1; }
+
+.edit-row { width: 100%; margin-bottom: 0.5rem; }
+.edit-row:last-of-type { margin-bottom: 0; }
+.edit-row-inline { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.edit-text {
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+.edit-text:focus { outline: none; border-color: var(--accent-border); }
+
+.edit-input {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 0.35rem 0.55rem;
+  min-width: 8rem;
+}
+.edit-input:focus { outline: none; border-color: var(--accent-border); }
+.edit-input-cat { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--color-decision); }
+

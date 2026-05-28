@@ -1,0 +1,44 @@
+{# Single action item row. Vars: ai (ActionItem with .transcript), context ("list" or "detail"). #}
+<div class="action-item {% if ai.completed %}action-completed{% endif %}" id="action-item-{{ ai.id }}">
+  <input type="checkbox" class="action-checkbox" {% if ai.completed %}checked{% endif %}
+         hx-patch="/api/action-items/{{ ai.id }}" hx-swap="none"
+         hx-on::after-request="this.closest('.action-item').classList.toggle('action-completed', this.checked);{% if context == 'list' %} htmx.trigger('#extractList', 'refresh');{% endif %}">
+  <div class="action-body">
+    <div class="action-text-row">
+      <span class="action-text">{{ ai.text }}</span>
+      <span class="action-tags">
+        {% if not ai.completed %}
+          {% set days = ai.created_at|age_days %}
+          {% if days is not none and days >= 7 %}
+            <span class="age-badge age-{{ days|age_tier }}" title="Open for {{ days }} day{{ 's' if days != 1 else '' }}">{{ days }}d</span>
+          {% endif %}
+        {% endif %}
+        {% if ai.assignee %}<span class="chip chip-dot" style="--chip-dot-color: var(--accent)">@{{ ai.assignee }}</span>{% endif %}
+        {% if ai.priority == 'urgent' %}<span class="pill" style="--pill-color: var(--color-priority-urgent)">Urgent</span>
+        {% elif ai.priority == 'high' %}<span class="pill" style="--pill-color: var(--color-priority-high)">High</span>{% endif %}
+      </span>
+    </div>
+    {% if context == 'list' %}
+    <a class="source-link" href="/transcripts/{{ ai.transcript.id }}">
+      <span class="source-serial">N°&nbsp;{{ "%03d"|format(ai.transcript.id) }}</span>
+      <span class="source-title">{{ ai.transcript.title or ai.transcript.filename }}</span>
+      <span class="source-arrow" aria-hidden="true">→</span>
+    </a>
+    {% endif %}
+  </div>
+  <div class="row-actions" aria-label="Item actions">
+    <button type="button" class="row-action-btn" aria-label="Edit"
+            hx-get="/partials/action-items/{{ ai.id }}/edit?context={{ context|default('list') }}"
+            hx-target="#action-item-{{ ai.id }}"
+            hx-swap="outerHTML">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-8 8H3v-3l8-8z"/></svg>
+    </button>
+    <button type="button" class="row-action-btn row-action-danger" aria-label="Delete"
+            hx-delete="/api/action-items/{{ ai.id }}"
+            hx-target="#action-item-{{ ai.id }}"
+            hx-swap="outerHTML"
+            hx-confirm="Delete this action item? This cannot be undone.">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1M5 4l1 9a1 1 0 001 1h2a1 1 0 001-1l1-9"/></svg>
+    </button>
+  </div>
+</div>

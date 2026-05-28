@@ -32,9 +32,18 @@
 
       <div class="nav-label">Extracts</div>
       <ul>
-        <li><a href="/transcripts?has_action_items=true" class="nav-link"><span class="nav-num">04</span> Action Items</a></li>
-        <li><a href="/transcripts?has_decisions=true" class="nav-link"><span class="nav-num">05</span> Decisions</a></li>
-        <li><a href="/transcripts?has_code=true" class="nav-link"><span class="nav-num">06</span> Code Snippets</a></li>
+        <li>
+          <a href="/action-items" class="nav-link {% if request.url.path == '/action-items' %}is-active{% endif %}">
+            <span class="nav-num">04</span> Action Items
+            {% if counts and counts.action_items %}<span class="nav-link-count">{{ counts.action_items }}</span>{% endif %}
+          </a>
+        </li>
+        <li>
+          <a href="/decisions" class="nav-link {% if request.url.path == '/decisions' %}is-active{% endif %}">
+            <span class="nav-num">05</span> Decisions
+            {% if counts and counts.decisions %}<span class="nav-link-count">{{ counts.decisions }}</span>{% endif %}
+          </a>
+        </li>
       </ul>
 
       {% if all_tags %}

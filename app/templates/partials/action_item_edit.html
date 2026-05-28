@@ -1,0 +1,32 @@
+{# Inline edit form for an action item. Vars: ai, context. #}
+<form class="action-item action-item-editing" id="action-item-{{ ai.id }}"
+      hx-post="/api/action-items/{{ ai.id }}/update"
+      hx-target="#action-item-{{ ai.id }}"
+      hx-swap="outerHTML">
+  <input type="hidden" name="context" value="{{ context|default('list') }}">
+  <div class="action-body" style="flex:1;">
+    <div class="edit-row">
+      <textarea name="text" class="edit-text" rows="2" required>{{ ai.text }}</textarea>
+    </div>
+    <div class="edit-row edit-row-inline">
+      <input type="text" name="assignee" class="edit-input" placeholder="Assignee" value="{{ ai.assignee or '' }}" autocomplete="off">
+      <select name="priority" class="edit-input">
+        <option value="low" {% if ai.priority == 'low' %}selected{% endif %}>Low</option>
+        <option value="normal" {% if ai.priority == 'normal' or not ai.priority %}selected{% endif %}>Normal</option>
+        <option value="high" {% if ai.priority == 'high' %}selected{% endif %}>High</option>
+        <option value="urgent" {% if ai.priority == 'urgent' %}selected{% endif %}>Urgent</option>
+      </select>
+    </div>
+  </div>
+  <div class="row-actions edit-actions">
+    <button type="submit" class="row-action-btn row-action-save" aria-label="Save">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8l3.5 4L13 5"/></svg>
+    </button>
+    <button type="button" class="row-action-btn" aria-label="Cancel"
+            hx-get="/partials/action-items/{{ ai.id }}?context={{ context|default('list') }}"
+            hx-target="#action-item-{{ ai.id }}"
+            hx-swap="outerHTML">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l10 10M13 3L3 13"/></svg>
+    </button>
+  </div>
+</form>

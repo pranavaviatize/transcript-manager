@@ -1,0 +1,24 @@
+{% if items %}
+{% set context = 'list' %}
+<div class="extract-list">
+  {% for ai in items %}
+    {% include 'partials/action_item_row.html' %}
+  {% endfor %}
+</div>
+<div hx-get="/partials/action-items-list" hx-trigger="refresh from:#extractList"
+     hx-include="[name='search'],[name='status'],[name='assignee'],[name='priority'],[name='sort_by'],[name='sort_order']"
+     hx-target="#extractList" hx-swap="innerHTML" style="display:none;"></div>
+{% else %}
+<div class="empty">
+  <div class="empty-mark">✻</div>
+  {% if has_active_filter %}
+  <h3 class="empty-title">No action items match</h3>
+  <p class="empty-sub">Try widening your filters — clear the assignee, priority, or status to broaden the view.</p>
+  <button class="btn btn-ghost" onclick="document.querySelectorAll('.filter-rail select, .filter-rail input[type=search]').forEach(el => { el.value=''; }); htmx.trigger('[name=search]', 'search');">Clear filters</button>
+  {% else %}
+  <h3 class="empty-title">No action items yet</h3>
+  <p class="empty-sub">Upload a transcript and AI will surface every commitment, assignee, and priority for you.</p>
+  <button class="btn btn-primary" onclick="document.getElementById('uploadModal').showModal()">Upload Transcript</button>
+  {% endif %}
+</div>
+{% endif %}

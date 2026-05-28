@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request, BackgroundTasks
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request, BackgroundTasks, Body
 from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse, FileResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc, asc, or_, and_, text
@@ -550,6 +550,90 @@ async def toggle_action_item(action_item_id: int, db: Session = Depends(get_db))
     return {"completed": ai.completed}
 
 
+VALID_PRIORITIES = {"low", "normal", "high", "urgent"}
+
+
+@router.post("/api/action-items/{action_item_id}/update")
+async def update_action_item(
+    action_item_id: int,
+    request: Request,
+    text: str = Form(...),
+    assignee: Optional[str] = Form(None),
+    priority: str = Form("normal"),
+    context: str = Form("list"),
+    db: Session = Depends(get_db),
+):
+    ai = db.query(ActionItem).options(joinedload(ActionItem.transcript)).filter(ActionItem.id == action_item_id).first()
+    if not ai:
+        raise HTTPException(status_code=404, detail="Not found")
+    text = text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Text required")
+    if priority not in VALID_PRIORITIES:
+        priority = "normal"
+    ai.text = text
+    ai.assignee = (assignee or "").strip() or None
+    ai.priority = priority
+    db.commit()
+    db.refresh(ai)
+    from app.templating import templates as _templates
+    return _templates.TemplateResponse(
+        "partials/action_item_row.html",
+        {"request": request, "ai": ai, "context": context},
+    )
+
+
+@router.delete("/api/action-items/{action_item_id}")
+async def delete_action_item(action_item_id: int, db: Session = Depends(get_db)):
+    ai = db.query(ActionItem).filter(ActionItem.id == action_item_id).first()
+    if not ai:
+        raise HTTPException(status_code=404, detail="Not found")
+    db.delete(ai)
+    db.commit()
+    return HTMLResponse(content="", status_code=200)
+
+
+VALID_DECISION_CATEGORIES = {"architecture", "process", "product", "tech-stack", "timeline", "general"}
+
+
+@router.post("/api/decisions/{decision_id}/update")
+async def update_decision(
+    decision_id: int,
+    request: Request,
+    text: str = Form(...),
+    category: str = Form("general"),
+    context: str = Form("list"),
+    db: Session = Depends(get_db),
+):
+    d = db.query(Decision).options(joinedload(Decision.transcript)).filter(Decision.id == decision_id).first()
+    if not d:
+        raise HTTPException(status_code=404, detail="Not found")
+    text = text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Text required")
+    if category not in VALID_DECISION_CATEGORIES:
+        category = "general"
+    d.text = text
+    d.category = category
+    db.commit()
+    db.refresh(d)
+    from app.templating import templates as _templates
+    return _templates.TemplateResponse(
+        "partials/decision_item_row.html",
+        {"request": request, "d": d, "context": context},
+    )
+
+
+@router.delete("/api/decisions/{decision_id}")
+async def delete_decision(decision_id: int, db: Session = Depends(get_db)):
+    d = db.query(Decision).filter(Decision.id == decision_id).first()
+    if not d:
+        raise HTTPException(status_code=404, detail="Not found")
+    db.delete(d)
+    db.commit()
+    return HTMLResponse(content="", status_code=200)
+
+
 TAG_PALETTE = ["#e8a444", "#5fa676", "#b489d4", "#6b9bd4", "#d56b6b", "#d4a04a", "#8eb8a6", "#c98ab0"]
 
 
@@ -617,6 +701,20 @@ async def delete_tag(tag_id: int, db: Session = Depends(get_db)):
     db.delete(tag)
     db.commit()
     return {"ok": True}
+
+
+@router.post("/api/tags/bulk-delete")
+async def bulk_delete_tags(
+    tag_ids: List[int] = Body(..., embed=True),
+    db: Session = Depends(get_db),
+):
+    if not tag_ids:
+        raise HTTPException(status_code=400, detail="No tags specified")
+    tags = db.query(Tag).filter(Tag.id.in_(tag_ids)).all()
+    for tag in tags:
+        db.delete(tag)
+    db.commit()
+    return {"ok": True, "deleted": len(tags)}
 
 
 @router.get("/api/participants", response_model=List[ParticipantOut])

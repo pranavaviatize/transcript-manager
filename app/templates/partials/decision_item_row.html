@@ -1,0 +1,29 @@
+{# Single decision row. Vars: d (Decision with .transcript), context ("list" or "detail"). #}
+<div class="decision-item" id="decision-item-{{ d.id }}">
+  <div class="decision-body">
+    <div class="decision-cat">{{ d.category }}</div>
+    <div class="decision-text">{{ d.text }}</div>
+    {% if context == 'list' %}
+    <a class="source-link" href="/transcripts/{{ d.transcript.id }}">
+      <span class="source-serial">N°&nbsp;{{ "%03d"|format(d.transcript.id) }}</span>
+      <span class="source-title">{{ d.transcript.title or d.transcript.filename }}</span>
+      <span class="source-arrow" aria-hidden="true">→</span>
+    </a>
+    {% endif %}
+  </div>
+  <div class="row-actions" aria-label="Item actions">
+    <button type="button" class="row-action-btn" aria-label="Edit"
+            hx-get="/partials/decisions/{{ d.id }}/edit?context={{ context|default('list') }}"
+            hx-target="#decision-item-{{ d.id }}"
+            hx-swap="outerHTML">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 2l3 3-8 8H3v-3l8-8z"/></svg>
+    </button>
+    <button type="button" class="row-action-btn row-action-danger" aria-label="Delete"
+            hx-delete="/api/decisions/{{ d.id }}"
+            hx-target="#decision-item-{{ d.id }}"
+            hx-swap="outerHTML"
+            hx-confirm="Delete this decision? This cannot be undone.">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1M5 4l1 9a1 1 0 001 1h2a1 1 0 001-1l1-9"/></svg>
+    </button>
+  </div>
+</div>

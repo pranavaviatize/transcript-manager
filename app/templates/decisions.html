@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Decisions · Transcript Hub{% endblock %}
+
+{% block content %}
+<header class="page-head fade-up">
+  <div>
+    <div class="page-eyebrow">Across the Archive</div>
+    <h1 class="page-title">Decisions</h1>
+    <p class="page-subtitle">The choices that shaped your work, lifted from every meeting and grouped by where they live.</p>
+  </div>
+  <div class="page-actions">
+    <a href="/transcripts?has_decisions=true" class="btn btn-ghost">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4h12M4 8h8M6 12h4"/></svg>
+      View Transcripts
+    </a>
+  </div>
+</header>
+
+<div class="filter-rail fade-up fade-up-1">
+  <div class="search-box">
+    <input type="search" name="search" placeholder="Search decisions…"
+           hx-get="/partials/decisions-list" hx-target="#extractList" hx-trigger="keyup changed delay:300ms, search"
+           hx-include="[name='search'],[name='category'],[name='sort_by'],[name='sort_order']"
+           hx-indicator="#listSpinner">
+  </div>
+  <select name="category" aria-label="Category"
+          hx-get="/partials/decisions-list" hx-target="#extractList" hx-trigger="change"
+          hx-include="[name='search'],[name='category'],[name='sort_by'],[name='sort_order']">
+    <option value="">All Categories</option>
+    {% for c in categories %}
+    <option value="{{ c }}">{{ c.replace('-', ' ')|title }}</option>
+    {% endfor %}
+  </select>
+  <select name="sort_by" aria-label="Sort by"
+          hx-get="/partials/decisions-list" hx-target="#extractList" hx-trigger="change"
+          hx-include="[name='search'],[name='category'],[name='sort_by'],[name='sort_order']">
+    <option value="created_at">Sort: Added</option>
+  </select>
+  <select name="sort_order" aria-label="Sort order"
+          hx-get="/partials/decisions-list" hx-target="#extractList" hx-trigger="change"
+          hx-include="[name='search'],[name='category'],[name='sort_by'],[name='sort_order']">
+    <option value="desc">Newest</option>
+    <option value="asc">Oldest</option>
+  </select>
+</div>
+
+<div class="fade-up fade-up-2">
+  <span id="listSpinner" class="htmx-indicator inline-spinner" style="margin-bottom: 0.5rem; display: none;">Loading…</span>
+  <div id="extractList" hx-get="/partials/decisions-list" hx-trigger="load" hx-target="#extractList">
+    <div class="skeleton">
+      {% for i in range(5) %}
+      <div class="skeleton-row">
+        <div class="skeleton-block sk-tag" style="height: 0.8rem; width: 50px;"></div>
+        <div style="width: 100%;">
+          <div class="skeleton-block sk-h"></div>
+          <div class="skeleton-block sk-h2"></div>
+        </div>
+        <div class="skeleton-block sk-tag"></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
