@@ -36,7 +36,8 @@
       </a>
       <button class="btn btn-danger" hx-delete="/api/transcripts/{{ transcript.id }}"
               hx-confirm="Delete this transcript? This cannot be undone."
-              hx-target="body" hx-push-url="/transcripts">
+              hx-swap="none"
+              hx-on::after-request="if(event.detail.successful){showToast('Transcript deleted','success');setTimeout(()=>{window.location.href='/transcripts'},600);}else{showToast('Could not delete transcript','error');}">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1M5 4l1 9a1 1 0 001 1h2a1 1 0 001-1l1-9"/></svg>
         Delete
       </button>

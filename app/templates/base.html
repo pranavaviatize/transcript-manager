@@ -78,6 +78,8 @@
     {% block content %}{% endblock %}
   </main>
 
+  <div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
   <dialog id="uploadModal" class="modal">
     <article class="modal-body">
       <header class="modal-head">
@@ -134,6 +136,22 @@
   </dialog>
 
   <script>
+    function showToast(message, type, duration) {
+      const c = document.getElementById('toastContainer');
+      if (!c) return;
+      const el = document.createElement('div');
+      el.className = 'toast toast-' + (type || 'info');
+      el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+      el.textContent = message;
+      c.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('is-shown'));
+      const hold = duration || 2500;
+      setTimeout(() => {
+        el.classList.remove('is-shown');
+        el.addEventListener('transitionend', () => el.remove(), { once: true });
+      }, hold);
+    }
+
     function showTab(tab) {
       document.getElementById('fileTab').hidden = tab !== 'file';
       document.getElementById('pasteTab').hidden = tab !== 'paste';
