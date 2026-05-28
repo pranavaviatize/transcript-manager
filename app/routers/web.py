@@ -6,18 +6,45 @@ from typing import Optional, List
 from datetime import datetime
 
 from app.database import get_db
-from app.models import Transcript, Tag, Participant, ActionItem, Decision
+from app.models import (
+    Transcript,
+    Tag,
+    Participant,
+    ActionItem,
+    Decision,
+    transcript_tags,
+    transcript_participants,
+)
 from app.templating import templates
 
 router = APIRouter()
 
 
 def _get_common_context(db: Session):
-    tags = db.query(Tag).order_by(Tag.name).all()
-    participants = db.query(Participant).order_by(Participant.name).all()
+    tag_rows = (
+        db.query(Tag, func.count(transcript_tags.c.transcript_id).label("usage"))
+        .outerjoin(transcript_tags, Tag.id == transcript_tags.c.tag_id)
+        .group_by(Tag.id)
+        .order_by(func.count(transcript_tags.c.transcript_id).desc(), Tag.name)
+        .all()
+    )
+    participant_rows = (
+        db.query(Participant, func.count(transcript_participants.c.transcript_id).label("usage"))
+        .outerjoin(transcript_participants, Participant.id == transcript_participants.c.participant_id)
+        .group_by(Participant.id)
+        .order_by(func.count(transcript_participants.c.transcript_id).desc(), Participant.name)
+        .all()
+    )
+
     return {
-        "all_tags": tags,
-        "all_participants": participants,
+        "all_tags": [
+            {"name": t.name, "color": t.color, "count": int(usage or 0)}
+            for t, usage in tag_rows
+        ],
+        "all_participants": [
+            {"name": p.name, "count": int(usage or 0)}
+            for p, usage in participant_rows
+        ],
         "counts": {
             "action_items": db.query(func.count(ActionItem.id)).scalar() or 0,
             "decisions": db.query(func.count(Decision.id)).scalar() or 0,

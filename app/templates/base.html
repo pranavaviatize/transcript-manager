@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Transcript Hub{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Geist:wght@300..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
@@ -47,15 +48,35 @@
         </li>
       </ul>
 
-      {% set _url_tags = request.query_params.get('tags', '').split(',') if request.url.path == '/transcripts' else [] %}
-      {% set _url_parts = request.query_params.get('participants', '').split(',') if request.url.path == '/transcripts' else [] %}
+      {% set _on_transcripts = request.url.path == '/transcripts' %}
+      {% set _url_tags = (request.query_params.get('tags', '').split(',') | select | list) if _on_transcripts else [] %}
+      {% set _url_parts = (request.query_params.get('participants', '').split(',') | select | list) if _on_transcripts else [] %}
+
+      {% macro filter_url(tags, parts) -%}
+        /transcripts{% if tags or parts %}?{% if tags %}tags={{ tags|join(',') }}{% endif %}{% if tags and parts %}&amp;{% endif %}{% if parts %}participants={{ parts|join(',') }}{% endif %}{% endif %}
+      {%- endmacro %}
 
       {% if all_tags %}
       <details class="nav-group" open>
         <summary><span class="nav-label">Tags</span><span class="nav-count">{{ all_tags|length }}</span></summary>
-        <div class="tag-cloud">
+        {% if all_tags|length > 8 %}
+        <div class="sidebar-filter">
+          <input type="search" class="sidebar-filter-input" placeholder="Filter tags…"
+                 oninput="filterSidebar(this, '#sidebarTagCloud .pill', '[data-name]')"
+                 aria-label="Filter tags">
+        </div>
+        {% endif %}
+        <div id="sidebarTagCloud" class="tag-cloud scroll-list">
           {% for tag in all_tags %}
-          <a href="/transcripts?tags={{ tag.name }}" class="pill {% if tag.name in _url_tags %}is-active{% endif %}" style="--pill-color: {{ tag.color }}">{{ tag.name }}</a>
+          {% set is_active = tag.name in _url_tags %}
+          {% set toggled = (_url_tags | reject('equalto', tag.name) | list) if is_active else (_url_tags + [tag.name]) %}
+          <a href="{{ filter_url(toggled, _url_parts)|trim }}"
+             class="pill {% if is_active %}is-active{% endif %}"
+             style="--pill-color: {{ tag.color }}"
+             data-name="{{ tag.name|lower }}"
+             title="{% if is_active %}Remove “{{ tag.name }}” filter{% else %}Filter by “{{ tag.name }}”{% endif %} · {{ tag.count }} transcript{{ 's' if tag.count != 1 else '' }}">
+            {{ tag.name }}
+          </a>
           {% endfor %}
         </div>
       </details>
@@ -64,9 +85,21 @@
       {% if all_participants %}
       <details class="nav-group">
         <summary><span class="nav-label">Participants</span><span class="nav-count">{{ all_participants|length }}</span></summary>
-        <div class="participant-list">
+        {% if all_participants|length > 8 %}
+        <div class="sidebar-filter">
+          <input type="search" class="sidebar-filter-input" placeholder="Filter people…"
+                 oninput="filterSidebar(this, '#sidebarParticipantList .participant-chip', '[data-name]')"
+                 aria-label="Filter participants">
+        </div>
+        {% endif %}
+        <div id="sidebarParticipantList" class="participant-list scroll-list">
           {% for p in all_participants %}
-          <a href="/transcripts?participants={{ p.name }}" class="participant-chip {% if p.name in _url_parts %}is-active{% endif %}">
+          {% set is_active = p.name in _url_parts %}
+          {% set toggled = (_url_parts | reject('equalto', p.name) | list) if is_active else (_url_parts + [p.name]) %}
+          <a href="{{ filter_url(_url_tags, toggled)|trim }}"
+             class="participant-chip {% if is_active %}is-active{% endif %}"
+             data-name="{{ p.name|lower }}"
+             title="{% if is_active %}Remove “{{ p.name }}” filter{% else %}Filter by “{{ p.name }}”{% endif %} · {{ p.count }} transcript{{ 's' if p.count != 1 else '' }}">
             <span class="participant-avatar">{{ p.name[0]|upper }}</span>
             <span>{{ p.name }}</span>
           </a>
@@ -183,6 +216,14 @@
         const input = dropZone.querySelector('input[type=file]');
         input.files = e.dataTransfer.files;
         input.dispatchEvent(new Event('change'));
+      });
+    }
+
+    function filterSidebar(input, itemSelector, attrSelector) {
+      const q = (input.value || '').trim().toLowerCase();
+      document.querySelectorAll(itemSelector).forEach(el => {
+        const name = (el.getAttribute('data-name') || '').toLowerCase();
+        el.style.display = (!q || name.includes(q)) ? '' : 'none';
       });
     }
 
