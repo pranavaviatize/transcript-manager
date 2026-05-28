@@ -25,6 +25,7 @@
     <nav class="nav-primary" aria-label="Primary">
       <div class="nav-label">Library</div>
       <ul>
+        <li><a href="/recall" class="nav-link {% if request.url.path == '/recall' %}is-active{% endif %}"><span class="nav-num">00</span> Recall</a></li>
         <li><a href="/" class="nav-link {% if request.url.path == '/' %}is-active{% endif %}"><span class="nav-num">01</span> Dashboard</a></li>
         <li><a href="/transcripts" class="nav-link {% if request.url.path == '/transcripts' %}is-active{% endif %}"><span class="nav-num">02</span> All Transcripts</a></li>
         <li><a href="/tags" class="nav-link {% if request.url.path == '/tags' %}is-active{% endif %}"><span class="nav-num">03</span> Manage Tags</a></li>

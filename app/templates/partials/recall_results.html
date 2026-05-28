@@ -1,0 +1,86 @@
+{% if not has_query %}
+<div class="recall-prompt">
+  <div class="empty-mark" aria-hidden="true">✻</div>
+  <p class="recall-prompt-text">Start typing to recall.</p>
+  <p class="recall-prompt-hint muted">Searches across action items, decisions, and transcript text simultaneously.</p>
+</div>
+{% elif total == 0 %}
+<div class="empty">
+  <div class="empty-mark">✻</div>
+  <h3 class="empty-title">Nothing found for &ldquo;{{ q }}&rdquo;</h3>
+  <p class="empty-sub">No matches in action items, decisions, or transcript text. Try a shorter phrase, a different word, or check spelling.</p>
+</div>
+{% else %}
+<div class="recall-summary muted">{{ total }} match{{ 'es' if total != 1 else '' }} for <strong>&ldquo;{{ q }}&rdquo;</strong></div>
+
+{% if action_items %}
+<section class="recall-group fade-up">
+  <h2 class="recall-group-head">
+    <span class="recall-group-dot" style="--dot-color: var(--color-action);" aria-hidden="true"></span>
+    Action Items
+    <span class="recall-group-count">{{ action_items|length }}</span>
+  </h2>
+  <div class="recall-rows">
+    {% for ai in action_items %}
+    <a class="recall-row" href="/transcripts/{{ ai.transcript.id }}">
+      <span class="recall-row-text">
+        {% if ai.completed %}<span class="recall-status-pill recall-status-done">done</span>{% endif %}
+        {{ ai.text|highlight(q) }}
+      </span>
+      <span class="recall-row-meta">
+        {% if ai.assignee %}<span class="chip chip-dot" style="--chip-dot-color: var(--accent)">@{{ ai.assignee }}</span>{% endif %}
+        <span class="source-serial">N°&nbsp;{{ "%03d"|format(ai.transcript.id) }}</span>
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if decisions %}
+<section class="recall-group fade-up fade-up-1">
+  <h2 class="recall-group-head">
+    <span class="recall-group-dot" style="--dot-color: var(--color-decision);" aria-hidden="true"></span>
+    Decisions
+    <span class="recall-group-count">{{ decisions|length }}</span>
+  </h2>
+  <div class="recall-rows">
+    {% for d in decisions %}
+    <a class="recall-row" href="/transcripts/{{ d.transcript.id }}">
+      <span class="recall-row-text">
+        <span class="recall-cat">{{ d.category }}</span>
+        {{ d.text|highlight(q) }}
+      </span>
+      <span class="recall-row-meta">
+        <span class="source-serial">N°&nbsp;{{ "%03d"|format(d.transcript.id) }}</span>
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if transcripts %}
+<section class="recall-group fade-up fade-up-2">
+  <h2 class="recall-group-head">
+    <span class="recall-group-dot" style="--dot-color: var(--accent);" aria-hidden="true"></span>
+    Transcripts
+    <span class="recall-group-count">{{ transcripts|length }}</span>
+  </h2>
+  <div class="recall-rows">
+    {% for hit in transcripts %}
+    <a class="recall-row recall-row-transcript" href="/transcripts/{{ hit.transcript.id }}">
+      <div class="recall-row-main">
+        <div class="recall-row-title">{{ (hit.transcript.title or hit.transcript.filename)|highlight(q) }}</div>
+        {% if hit.excerpt %}<div class="recall-row-excerpt">{{ hit.excerpt|highlight(q) }}</div>{% endif %}
+      </div>
+      <span class="recall-row-meta">
+        {% if hit.transcript.meeting_date %}<span class="recall-row-date">{{ hit.transcript.meeting_date.strftime('%b %d, %Y') }}</span>{% endif %}
+        <span class="source-serial">N°&nbsp;{{ "%03d"|format(hit.transcript.id) }}</span>
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endif %}

@@ -334,6 +334,122 @@ async def decision_edit_partial(
     )
 
 
+# ---------------------------------------------------------------------------
+# Recall: unified search across action items, decisions, and transcripts
+# ---------------------------------------------------------------------------
+
+
+@router.get("/recall", response_class=HTMLResponse)
+async def recall_page(request: Request, db: Session = Depends(get_db)):
+    ctx = _get_common_context(db)
+    ctx["request"] = request
+    return templates.TemplateResponse("recall.html", ctx)
+
+
+def _excerpt_around(text: str, query: str, radius: int = 90) -> str:
+    """Return a short excerpt of `text` centered on the first case-insensitive match of `query`."""
+    if not text or not query:
+        return (text or "")[: radius * 2]
+    lower = text.lower()
+    pos = lower.find(query.lower())
+    if pos < 0:
+        return text[: radius * 2]
+    start = max(0, pos - radius)
+    end = min(len(text), pos + len(query) + radius)
+    snippet = text[start:end]
+    if start > 0:
+        snippet = "…" + snippet
+    if end < len(text):
+        snippet = snippet + "…"
+    return snippet
+
+
+@router.get("/partials/recall-results", response_class=HTMLResponse)
+async def recall_results_partial(
+    request: Request,
+    q: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    query_text = (q or "").strip()
+    if not query_text:
+        return templates.TemplateResponse(
+            "partials/recall_results.html",
+            {
+                "request": request,
+                "q": "",
+                "action_items": [],
+                "decisions": [],
+                "transcripts": [],
+                "total": 0,
+                "has_query": False,
+            },
+        )
+
+    like = f"%{query_text}%"
+
+    action_items = (
+        db.query(ActionItem)
+        .options(joinedload(ActionItem.transcript))
+        .filter(ActionItem.text.ilike(like))
+        .order_by(desc(ActionItem.created_at))
+        .limit(20)
+        .all()
+    )
+
+    decisions = (
+        db.query(Decision)
+        .options(joinedload(Decision.transcript))
+        .filter(Decision.text.ilike(like))
+        .order_by(desc(Decision.created_at))
+        .limit(20)
+        .all()
+    )
+
+    transcripts_raw = (
+        db.query(Transcript)
+        .filter(
+            or_(
+                Transcript.title.ilike(like),
+                Transcript.summary.ilike(like),
+                Transcript.content_clean.ilike(like),
+            )
+        )
+        .order_by(desc(Transcript.meeting_date), desc(Transcript.created_at))
+        .limit(20)
+        .all()
+    )
+
+    transcript_hits = []
+    for t in transcripts_raw:
+        # Find best context: prefer summary, then content
+        excerpt_source = ""
+        if t.summary and query_text.lower() in t.summary.lower():
+            excerpt_source = t.summary
+        elif t.content_clean and query_text.lower() in t.content_clean.lower():
+            excerpt_source = t.content_clean
+        elif t.title and query_text.lower() in t.title.lower():
+            excerpt_source = t.title
+        transcript_hits.append({
+            "transcript": t,
+            "excerpt": _excerpt_around(excerpt_source, query_text),
+        })
+
+    total = len(action_items) + len(decisions) + len(transcript_hits)
+
+    return templates.TemplateResponse(
+        "partials/recall_results.html",
+        {
+            "request": request,
+            "q": query_text,
+            "action_items": action_items,
+            "decisions": decisions,
+            "transcripts": transcript_hits,
+            "total": total,
+            "has_query": True,
+        },
+    )
+
+
 @router.get("/partials/action-items-list", response_class=HTMLResponse)
 async def action_items_list_partial(
     request: Request,

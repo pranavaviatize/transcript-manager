@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Recall · Transcript Hub{% endblock %}
+
+{% block content %}
+<header class="page-head fade-up">
+  <div>
+    <div class="page-eyebrow">Cross-Archive Search</div>
+    <h1 class="page-title">Recall</h1>
+    <p class="page-subtitle">One search across every action item, decision, and transcript. Use this when you remember <em>that we discussed it</em> but not <em>where</em>.</p>
+  </div>
+</header>
+
+<div class="recall-search fade-up fade-up-1">
+  <input
+    type="search"
+    name="q"
+    autofocus
+    placeholder="What are you looking for? e.g. payment retry, log book format, Stripe…"
+    hx-get="/partials/recall-results"
+    hx-target="#recallResults"
+    hx-trigger="keyup changed delay:250ms, search"
+    hx-indicator="#recallSpinner"
+    class="recall-input">
+  <span id="recallSpinner" class="htmx-indicator inline-spinner" style="display:none;">Searching…</span>
+</div>
+
+<div id="recallResults" class="fade-up fade-up-2">
+  <div class="recall-prompt">
+    <div class="empty-mark" aria-hidden="true">✻</div>
+    <p class="recall-prompt-text">Start typing to recall.</p>
+    <p class="recall-prompt-hint muted">Searches across action items, decisions, and transcript text simultaneously.</p>
+  </div>
+</div>
+{% endblock %}

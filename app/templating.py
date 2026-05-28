@@ -26,5 +26,35 @@ def _age_tier(days):
     return "cold"
 
 
+def _highlight(text, query):
+    """Wrap case-insensitive matches of `query` in <mark> tags. Returns Markup."""
+    from markupsafe import Markup, escape
+    if not text:
+        return Markup("")
+    if not query:
+        return Markup(escape(text))
+    safe = str(escape(text))
+    safe_q = str(escape(query))
+    # Case-insensitive replace while preserving original casing
+    lower = safe.lower()
+    qlower = safe_q.lower()
+    if qlower not in lower:
+        return Markup(safe)
+    out = []
+    i = 0
+    while True:
+        j = lower.find(qlower, i)
+        if j < 0:
+            out.append(safe[i:])
+            break
+        out.append(safe[i:j])
+        out.append("<mark>")
+        out.append(safe[j : j + len(safe_q)])
+        out.append("</mark>")
+        i = j + len(safe_q)
+    return Markup("".join(out))
+
+
 templates.env.filters["age_days"] = _age_days
 templates.env.filters["age_tier"] = _age_tier
+templates.env.filters["highlight"] = _highlight
