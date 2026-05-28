@@ -178,11 +178,38 @@
 <section class="panel fade-up fade-up-4">
   <header class="panel-head">
     <h3 class="panel-title">Full Transcript</h3>
+    <button type="button" class="btn btn-ghost btn-sm" data-copy-target="#fullTranscriptBody"
+            onclick="copyTranscript(this)">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+        <rect x="5" y="5" width="9" height="9" rx="1.5"/>
+        <path d="M11 5V3.5A1.5 1.5 0 009.5 2h-6A1.5 1.5 0 002 3.5v6A1.5 1.5 0 003.5 11H5"/>
+      </svg>
+      <span class="copy-label">Copy</span>
+    </button>
   </header>
   <div class="panel-body" style="padding: 0;">
-    <div class="transcript-body">{{ transcript.content_clean }}</div>
+    <div id="fullTranscriptBody" class="transcript-body">{{ transcript.content_clean }}</div>
   </div>
 </section>
+
+<script>
+async function copyTranscript(btn) {
+  const target = document.querySelector(btn.dataset.copyTarget);
+  if (!target) return;
+  const text = target.innerText;
+  try {
+    await navigator.clipboard.writeText(text);
+    const label = btn.querySelector('.copy-label');
+    const original = label.textContent;
+    label.textContent = 'Copied';
+    btn.disabled = true;
+    showToast('Transcript copied to clipboard', 'success');
+    setTimeout(() => { label.textContent = original; btn.disabled = false; }, 1500);
+  } catch (err) {
+    showToast('Could not copy — clipboard blocked', 'error');
+  }
+}
+</script>
 
 {% if transcript.status == 'processing' %}
 <div id="pollStatus" hx-get="/api/transcripts/{{ transcript.id }}" hx-trigger="every 3s" hx-swap="none"
