@@ -44,9 +44,16 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/transcripts", response_class=HTMLResponse)
-async def transcripts_page(request: Request, db: Session = Depends(get_db)):
+async def transcripts_page(
+    request: Request,
+    tags: Optional[str] = None,
+    participants: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
     ctx = _get_common_context(db)
     ctx["request"] = request
+    ctx["active_tags"] = [t.strip() for t in (tags or "").split(",") if t.strip()]
+    ctx["active_participants"] = [p.strip() for p in (participants or "").split(",") if p.strip()]
     return templates.TemplateResponse("transcripts.html", ctx)
 
 

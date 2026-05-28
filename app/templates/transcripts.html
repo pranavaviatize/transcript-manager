@@ -17,22 +17,25 @@
   </div>
 </header>
 
-<div class="filter-rail fade-up fade-up-1">
+{% set _inc = "#filterRail input, #filterRail select" %}
+<div id="filterRail" class="filter-rail fade-up fade-up-1">
+  <input type="hidden" name="tags" value="{{ active_tags|join(',') }}">
+  <input type="hidden" name="participants" value="{{ active_participants|join(',') }}">
   <div class="search-box">
     <input type="search" name="search" placeholder="Search transcripts, summaries, content…"
            hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="keyup changed delay:300ms, search"
-           hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']"
+           hx-include="{{ _inc }}"
            hx-indicator="#listSpinner">
   </div>
   <input type="date" name="date_from" aria-label="From date"
          hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
-         hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+         hx-include="{{ _inc }}">
   <input type="date" name="date_to" aria-label="To date"
          hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
-         hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+         hx-include="{{ _inc }}">
   <select name="meeting_type" aria-label="Meeting type"
           hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
-          hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+          hx-include="{{ _inc }}">
     <option value="">All Types</option>
     <option value="standup">Standup</option>
     <option value="code-review">Code Review</option>
@@ -47,7 +50,7 @@
   </select>
   <select name="sort_by" aria-label="Sort by"
           hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
-          hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+          hx-include="{{ _inc }}">
     <option value="created_at">Sort: Added</option>
     <option value="meeting_date">Sort: Meeting Date</option>
     <option value="word_count">Sort: Length</option>
@@ -55,11 +58,34 @@
   </select>
   <select name="sort_order" aria-label="Sort order"
           hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
-          hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+          hx-include="{{ _inc }}">
     <option value="desc">Newest</option>
     <option value="asc">Oldest</option>
   </select>
 </div>
+
+{% if active_tags or active_participants %}
+<div class="active-filters fade-up fade-up-1" aria-label="Active filters">
+  <span class="active-filters-label">Filtered by</span>
+  {% for t in active_tags %}
+  <span class="filter-chip">
+    <span class="filter-chip-kind">tag</span>
+    <span class="filter-chip-value">{{ t }}</span>
+    <a class="filter-chip-clear" aria-label="Remove tag filter {{ t }}"
+       href="/transcripts{% set rest = active_tags | reject('equalto', t) | list %}{% if rest or active_participants %}?{% if rest %}tags={{ rest|join(',') }}{% endif %}{% if rest and active_participants %}&amp;{% endif %}{% if active_participants %}participants={{ active_participants|join(',') }}{% endif %}{% endif %}">×</a>
+  </span>
+  {% endfor %}
+  {% for p in active_participants %}
+  <span class="filter-chip">
+    <span class="filter-chip-kind">person</span>
+    <span class="filter-chip-value">{{ p }}</span>
+    <a class="filter-chip-clear" aria-label="Remove person filter {{ p }}"
+       href="/transcripts{% set rest = active_participants | reject('equalto', p) | list %}{% if rest or active_tags %}?{% if active_tags %}tags={{ active_tags|join(',') }}{% endif %}{% if active_tags and rest %}&amp;{% endif %}{% if rest %}participants={{ rest|join(',') }}{% endif %}{% endif %}">×</a>
+  </span>
+  {% endfor %}
+  <a class="filter-chip-clear-all" href="/transcripts">Clear all</a>
+</div>
+{% endif %}
 
 <div class="fade-up fade-up-2">
   <span id="listSpinner" class="htmx-indicator inline-spinner" style="margin-bottom: 0.5rem; display: none;">Loading…</span>

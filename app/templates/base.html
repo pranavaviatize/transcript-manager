@@ -47,12 +47,15 @@
         </li>
       </ul>
 
+      {% set _url_tags = request.query_params.get('tags', '').split(',') if request.url.path == '/transcripts' else [] %}
+      {% set _url_parts = request.query_params.get('participants', '').split(',') if request.url.path == '/transcripts' else [] %}
+
       {% if all_tags %}
       <details class="nav-group" open>
         <summary><span class="nav-label">Tags</span><span class="nav-count">{{ all_tags|length }}</span></summary>
         <div class="tag-cloud">
           {% for tag in all_tags %}
-          <a href="/transcripts?tags={{ tag.name }}" class="pill" style="--pill-color: {{ tag.color }}">{{ tag.name }}</a>
+          <a href="/transcripts?tags={{ tag.name }}" class="pill {% if tag.name in _url_tags %}is-active{% endif %}" style="--pill-color: {{ tag.color }}">{{ tag.name }}</a>
           {% endfor %}
         </div>
       </details>
@@ -63,7 +66,7 @@
         <summary><span class="nav-label">Participants</span><span class="nav-count">{{ all_participants|length }}</span></summary>
         <div class="participant-list">
           {% for p in all_participants %}
-          <a href="/transcripts?participants={{ p.name }}" class="participant-chip">
+          <a href="/transcripts?participants={{ p.name }}" class="participant-chip {% if p.name in _url_parts %}is-active{% endif %}">
             <span class="participant-avatar">{{ p.name[0]|upper }}</span>
             <span>{{ p.name }}</span>
           </a>

@@ -290,6 +290,11 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 1.5rem 0; }
   transition: all 0.15s var(--ease);
 }
 .participant-chip:hover { background: var(--bg-card); color: var(--text); }
+.participant-chip.is-active {
+  background: var(--accent-soft);
+  color: var(--text-strong);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
 
 .participant-avatar {
   width: 20px; height: 20px;
@@ -475,6 +480,65 @@ kbd {
   letter-spacing: 0.01em;
 }
 .pill:hover { background: color-mix(in srgb, var(--pill-color, var(--text-muted)) 20%, transparent); }
+.pill.is-active {
+  background: color-mix(in srgb, var(--pill-color, var(--text-muted)) 32%, transparent);
+  box-shadow: inset 0 0 0 1px var(--pill-color, var(--text-muted));
+}
+
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: -0.75rem 0 1.25rem;
+  font-size: 12.5px;
+}
+.active-filters-label {
+  color: var(--text-dim);
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+  font-size: 10.5px;
+}
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.35rem 0.25rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+.filter-chip-kind {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+}
+.filter-chip-value { font-weight: 500; }
+.filter-chip-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  line-height: 1;
+  transition: all 0.15s var(--ease);
+}
+.filter-chip-clear:hover { background: var(--bg-input); color: var(--text-strong); }
+.filter-chip-clear-all {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 12px;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius);
+}
+.filter-chip-clear-all:hover { color: var(--text-strong); background: var(--bg-input); }
 
 .chip {
   display: inline-flex; align-items: center; gap: 0.35rem;

@@ -4,9 +4,11 @@
 
 {% block content %}
 <header class="page-head fade-up">
-  <div class="page-eyebrow"><span>Library</span> · <span>Tags</span></div>
-  <h1 class="detail-title">Tags</h1>
-  <p class="muted" style="max-width: 60ch;">Every tag in your library. Renaming or recoloring here propagates to every transcript using it. Deleting a tag removes it from all transcripts but keeps the transcripts themselves.</p>
+  <div>
+    <div class="page-eyebrow">Library · Tags</div>
+    <h1 class="page-title">Tags</h1>
+    <p class="page-subtitle">Every tag in your library. Renaming or recoloring here propagates to every transcript using it. Deleting a tag removes it from all transcripts but keeps the transcripts themselves.</p>
+  </div>
 </header>
 
 <section class="card fade-up fade-up-1" style="margin-bottom: 1.5rem;">
@@ -27,16 +29,24 @@
   </form>
 </section>
 
-<section class="panel fade-up fade-up-2">
+<section class="panel fade-up fade-up-2" id="tags-panel">
   <header class="panel-head">
     <h3 class="panel-title">All Tags <span class="panel-title-count">{{ tags|length }}</span></h3>
+    <div class="bulk-actions" id="bulk-actions" hidden>
+      <span class="bulk-actions-count"><span id="bulk-count">0</span> selected</span>
+      <button type="button" class="btn btn-sm" id="bulk-clear">Clear</button>
+      <button type="button" class="btn btn-danger btn-sm" id="bulk-delete">Delete selected</button>
+    </div>
   </header>
   <div class="panel-body" style="padding: 0;">
     {% if tags %}
     <table class="tag-table">
       <thead>
         <tr>
-          <th style="width: 32%;">Tag</th>
+          <th style="width: 36px; padding-right: 0;">
+            <input type="checkbox" id="select-all" class="tag-checkbox" title="Select all" aria-label="Select all tags">
+          </th>
+          <th style="width: 30%;">Tag</th>
           <th style="width: 8%;">Color</th>
           <th style="width: 12%;">Source</th>
           <th style="width: 18%;">Used by</th>
@@ -46,6 +56,9 @@
       <tbody>
         {% for tag in tags %}
         <tr data-tag-id="{{ tag.id }}">
+          <td style="padding-right: 0;">
+            <input type="checkbox" class="tag-checkbox row-check" value="{{ tag.id }}" aria-label="Select {{ tag.name }}">
+          </td>
           <td>
             <div style="display: flex; align-items: center; gap: 0.75rem;">
               <span class="pill tag-preview" style="--pill-color: {{ tag.color }}">{{ tag.name }}</span>
@@ -95,4 +108,82 @@
     {% endif %}
   </div>
 </section>
+
+{% if tags %}
+<script>
+(function() {
+  const selectAll = document.getElementById('select-all');
+  const bulkBar = document.getElementById('bulk-actions');
+  const bulkCount = document.getElementById('bulk-count');
+  const bulkDelete = document.getElementById('bulk-delete');
+  const bulkClear = document.getElementById('bulk-clear');
+  const tbody = document.querySelector('.tag-table tbody');
+
+  function rowChecks() {
+    return Array.from(document.querySelectorAll('.row-check'));
+  }
+  function selectedIds() {
+    return rowChecks().filter(c => c.checked).map(c => parseInt(c.value, 10));
+  }
+  function refresh() {
+    const ids = selectedIds();
+    const all = rowChecks();
+    bulkCount.textContent = ids.length;
+    bulkBar.hidden = ids.length === 0;
+    if (all.length === 0) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    } else if (ids.length === all.length) {
+      selectAll.checked = true;
+      selectAll.indeterminate = false;
+    } else if (ids.length === 0) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    } else {
+      selectAll.checked = false;
+      selectAll.indeterminate = true;
+    }
+  }
+
+  selectAll.addEventListener('change', () => {
+    rowChecks().forEach(c => { c.checked = selectAll.checked; });
+    refresh();
+  });
+  tbody.addEventListener('change', (e) => {
+    if (e.target.classList.contains('row-check')) refresh();
+  });
+  bulkClear.addEventListener('click', () => {
+    rowChecks().forEach(c => { c.checked = false; });
+    refresh();
+  });
+
+  bulkDelete.addEventListener('click', async () => {
+    const ids = selectedIds();
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} tag${ids.length === 1 ? '' : 's'}? They will be removed from all transcripts.`)) return;
+    bulkDelete.disabled = true;
+    try {
+      const res = await fetch('/api/tags/bulk-delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({tag_ids: ids}),
+      });
+      if (!res.ok) throw new Error('request failed');
+      ids.forEach(id => {
+        const row = tbody.querySelector(`tr[data-tag-id="${id}"]`);
+        if (row) row.remove();
+      });
+      const countEl = document.querySelector('.panel-title-count');
+      if (countEl) countEl.textContent = rowChecks().length;
+      showToast(`Deleted ${ids.length} tag${ids.length === 1 ? '' : 's'}`, 'success');
+      refresh();
+    } catch (err) {
+      showToast('Could not delete tags', 'error');
+    } finally {
+      bulkDelete.disabled = false;
+    }
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}
