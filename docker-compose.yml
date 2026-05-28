@@ -1,0 +1,35 @@
+services:
+  app:
+    build: .
+    container_name: transcript-hub
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    networks:
+      - transcript-hub
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: transcript-hub-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - transcript-hub
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  transcript-hub:
+    driver: bridge

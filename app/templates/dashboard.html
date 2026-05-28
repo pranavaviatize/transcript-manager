@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard · Transcript Hub{% endblock %}
+
+{% block content %}
+<header class="page-head fade-up">
+  <div>
+    <div class="page-eyebrow">The Engineering Journal</div>
+    <h1 class="page-title">Dashboard <em>·</em> Overview</h1>
+    <p class="page-subtitle">A running record of meetings, decisions, and the code that surrounds them.</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="document.getElementById('uploadModal').showModal()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>
+      New Transcript
+    </button>
+  </div>
+</header>
+
+<section class="stat-strip fade-up fade-up-1">
+  <article class="stat stat--feature">
+    <div class="stat-head">
+      <span class="stat-label">Total Archive</span>
+      <span class="stat-index">N° 01</span>
+    </div>
+    <div>
+      <div class="stat-num tabular">{{ "%03d"|format(stats.total_transcripts or 0) }}</div>
+      <div class="stat-sub">transcripts indexed</div>
+    </div>
+  </article>
+  <article class="stat">
+    <div class="stat-head">
+      <span class="stat-label">This Week</span>
+      <span class="stat-index">02</span>
+    </div>
+    <div class="stat-num tabular">{{ stats.this_week or 0 }}</div>
+  </article>
+  <article class="stat">
+    <div class="stat-head">
+      <span class="stat-label">Pending Actions</span>
+      <span class="stat-index">03</span>
+    </div>
+    <div class="stat-num tabular">{{ stats.pending_action_items or 0 }}</div>
+  </article>
+  <article class="stat">
+    <div class="stat-head">
+      <span class="stat-label">Code Snippets</span>
+      <span class="stat-index">04</span>
+    </div>
+    <div class="stat-num tabular">{{ stats.total_code_blocks or 0 }}</div>
+  </article>
+  <article class="stat">
+    <div class="stat-head">
+      <span class="stat-label">Decisions</span>
+      <span class="stat-index">05</span>
+    </div>
+    <div class="stat-num tabular">{{ stats.total_decisions or 0 }}</div>
+  </article>
+</section>
+
+<div class="dash-grid">
+  <section class="fade-up fade-up-2">
+    <header class="section-head">
+      <h2 class="section-title"><span class="section-title-num">§ I.</span>Recent Transcripts</h2>
+      <a class="section-link" href="/transcripts">View all <span>→</span></a>
+    </header>
+
+    {% if recent %}
+      <div class="entry-list">
+        {% for t in recent %}
+        <a class="entry" href="/transcripts/{{ t.id }}">
+          <div class="entry-serial">N°&nbsp;{{ "%03d"|format(t.id) }}</div>
+          <div class="entry-main">
+            <div class="entry-title-wrap">
+              <h3 class="entry-title">{{ t.title or t.filename }}</h3>
+            </div>
+            <div class="entry-meta-row">
+              <span class="status status-{{ t.status }}">{{ t.status }}</span>
+              {% if t.meeting_type %}<span class="chip">{{ t.meeting_type.replace('-', ' ') }}</span>{% endif %}
+              {% for p in t.participants[:3] %}
+              <span class="chip chip-dot" style="--chip-dot-color: var(--accent)">{{ p.name }}</span>
+              {% endfor %}
+              {% if t.participants|length > 3 %}<span class="chip dim">+{{ t.participants|length - 3 }}</span>{% endif %}
+            </div>
+            {% if t.summary %}
+            <p class="entry-summary">{{ t.summary[:180] }}{% if t.summary|length > 180 %}…{% endif %}</p>
+            {% endif %}
+            {% if t.tags %}
+            <div class="entry-foot">
+              {% for tag in t.tags[:5] %}
+              <span class="pill" style="--pill-color: {{ tag.color }}">{{ tag.name }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          <div class="entry-side">
+            <span class="entry-date">
+              {% if t.meeting_date %}{{ t.meeting_date.strftime('%b %d, %Y') }}{% else %}{{ t.created_at.strftime('%b %d') }}{% endif %}
+            </span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <div class="empty-mark">✻</div>
+        <h3 class="empty-title">The archive is empty</h3>
+        <p class="empty-sub">Upload your first transcript to begin indexing decisions, action items, and code.</p>
+        <button class="btn btn-primary" onclick="document.getElementById('uploadModal').showModal()">Upload Transcript</button>
+      </div>
+    {% endif %}
+  </section>
+
+  <aside class="fade-up fade-up-3">
+    <header class="section-head">
+      <h2 class="section-title"><span class="section-title-num">§ II.</span>By Type</h2>
+    </header>
+    {% if stats.meeting_type_breakdown %}
+    <div class="type-list">
+      {% for mt, count in stats.meeting_type_breakdown.items() %}
+      <a class="type-row" href="/transcripts?meeting_type={{ mt }}">
+        <span class="type-row-name">{{ mt.replace('-', ' ') }}</span>
+        <span class="type-row-count tabular">{{ "%02d"|format(count) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted" style="font-size: 13px;">No meetings indexed yet.</p>
+    {% endif %}
+
+    <header class="section-head" style="margin-top: 2.5rem;">
+      <h2 class="section-title"><span class="section-title-num">§ III.</span>Quick Filters</h2>
+    </header>
+    <div class="quick-filters">
+      <a class="quick-filter" href="/transcripts?has_action_items=true">⚑ Has Actions</a>
+      <a class="quick-filter" href="/transcripts?has_decisions=true">⌘ Has Decisions</a>
+      <a class="quick-filter" href="/transcripts?has_code=true">⌥ Has Code</a>
+      <a class="quick-filter" href="/transcripts?meeting_type=architecture">Architecture</a>
+      <a class="quick-filter" href="/transcripts?meeting_type=code-review">Code Reviews</a>
+      <a class="quick-filter" href="/transcripts?meeting_type=retro">Retrospectives</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Transcript Hub{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Geist:wght@300..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+  <link rel="stylesheet" href="/static/css/app.css">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="bg-grain" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <aside class="sidebar">
+    <a class="brand" href="/">
+      <span class="brand-mark" aria-hidden="true">✻</span>
+      <span class="brand-name">Transcript<br>Hub</span>
+    </a>
+
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-label">Library</div>
+      <ul>
+        <li><a href="/" class="nav-link {% if request.url.path == '/' %}is-active{% endif %}"><span class="nav-num">01</span> Dashboard</a></li>
+        <li><a href="/transcripts" class="nav-link {% if request.url.path == '/transcripts' %}is-active{% endif %}"><span class="nav-num">02</span> All Transcripts</a></li>
+      </ul>
+
+      <div class="nav-label">Extracts</div>
+      <ul>
+        <li><a href="/transcripts?has_action_items=true" class="nav-link"><span class="nav-num">03</span> Action Items</a></li>
+        <li><a href="/transcripts?has_decisions=true" class="nav-link"><span class="nav-num">04</span> Decisions</a></li>
+        <li><a href="/transcripts?has_code=true" class="nav-link"><span class="nav-num">05</span> Code Snippets</a></li>
+      </ul>
+
+      {% if all_tags %}
+      <details class="nav-group" open>
+        <summary><span class="nav-label">Tags</span><span class="nav-count">{{ all_tags|length }}</span></summary>
+        <div class="tag-cloud">
+          {% for tag in all_tags %}
+          <a href="/transcripts?tags={{ tag.name }}" class="pill" style="--pill-color: {{ tag.color }}">{{ tag.name }}</a>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+
+      {% if all_participants %}
+      <details class="nav-group">
+        <summary><span class="nav-label">Participants</span><span class="nav-count">{{ all_participants|length }}</span></summary>
+        <div class="participant-list">
+          {% for p in all_participants %}
+          <a href="/transcripts?participants={{ p.name }}" class="participant-chip">
+            <span class="participant-avatar">{{ p.name[0]|upper }}</span>
+            <span>{{ p.name }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+    </nav>
+
+    <footer class="sidebar-footer">
+      <div class="kbd-hints">
+        <span class="kbd-hint"><kbd>/</kbd> search</span>
+        <span class="kbd-hint"><kbd>U</kbd> upload</span>
+      </div>
+      <div class="sidebar-meta">Issue №<span class="tabular">001</span> · v0.1</div>
+    </footer>
+  </aside>
+
+  <main class="canvas">
+    {% block content %}{% endblock %}
+  </main>
+
+  <dialog id="uploadModal" class="modal">
+    <article class="modal-body">
+      <header class="modal-head">
+        <div>
+          <div class="eyebrow">New Entry</div>
+          <h2 class="modal-title">Upload Transcript</h2>
+        </div>
+        <button class="icon-btn" aria-label="Close" onclick="document.getElementById('uploadModal').close()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l10 10M13 3L3 13"/></svg>
+        </button>
+      </header>
+
+      <div class="tab-row">
+        <button type="button" class="tab is-active" id="tabFile" onclick="showTab('file')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2h6l4 4v8a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M9 2v4h4"/></svg>
+          File Upload
+        </button>
+        <button type="button" class="tab" id="tabPaste" onclick="showTab('paste')">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 3h6a1 1 0 011 1v9a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z"/><path d="M6 1h4v3H6z"/></svg>
+          Paste Text
+        </button>
+      </div>
+
+      <div id="fileTab" class="tab-panel">
+        <form hx-post="/api/transcripts/upload" hx-encoding="multipart/form-data" hx-target="#uploadResult" hx-indicator="#uploadSpinner"
+              hx-on::after-request="if(event.detail.successful) { setTimeout(()=>{window.location.href='/transcripts/'+JSON.parse(event.detail.xhr.response).id}, 500); }">
+          <label class="dropzone" id="dropZone">
+            <div class="dropzone-mark" aria-hidden="true">✻</div>
+            <div class="dropzone-title" id="dropZoneTitle">Drop a file here<br><span class="dropzone-or">or click to browse</span></div>
+            <div class="dropzone-formats">.txt · .md · .vtt · .srt</div>
+            <input type="file" name="file" accept=".txt,.vtt,.srt,.md" required
+                   onchange="this.closest('form').querySelector('button[type=submit]').disabled=false; document.getElementById('dropZoneTitle').innerHTML='<strong>'+this.files[0].name+'</strong><br><span class=&quot;dropzone-or&quot;>ready to upload</span>';">
+          </label>
+          <footer class="modal-actions">
+            <span id="uploadSpinner" class="htmx-indicator inline-spinner">Uploading…</span>
+            <button type="submit" class="btn btn-primary" disabled>Upload &amp; Process</button>
+          </footer>
+        </form>
+      </div>
+
+      <div id="pasteTab" class="tab-panel" hidden>
+        <form hx-post="/api/transcripts/paste" hx-target="#uploadResult" hx-indicator="#uploadSpinner2"
+              hx-on::after-request="if(event.detail.successful) { setTimeout(()=>{window.location.href='/transcripts/'+JSON.parse(event.detail.xhr.response).id}, 500); }">
+          <textarea name="text" rows="12" placeholder="Paste your transcript here…&#10;&#10;Speaker A: Welcome to the meeting...&#10;Speaker B: Glad to be here..." required class="textarea-mono"></textarea>
+          <footer class="modal-actions">
+            <span id="uploadSpinner2" class="htmx-indicator inline-spinner">Saving…</span>
+            <button type="submit" class="btn btn-primary">Save &amp; Process</button>
+          </footer>
+        </form>
+      </div>
+
+      <div id="uploadResult"></div>
+    </article>
+  </dialog>
+
+  <script>
+    function showTab(tab) {
+      document.getElementById('fileTab').hidden = tab !== 'file';
+      document.getElementById('pasteTab').hidden = tab !== 'paste';
+      document.getElementById('tabFile').classList.toggle('is-active', tab === 'file');
+      document.getElementById('tabPaste').classList.toggle('is-active', tab === 'paste');
+    }
+
+    const dropZone = document.getElementById('dropZone');
+    if (dropZone) {
+      ['dragover', 'dragenter'].forEach(ev => dropZone.addEventListener(ev, (e) => { e.preventDefault(); dropZone.classList.add('is-drag'); }));
+      ['dragleave', 'dragend'].forEach(ev => dropZone.addEventListener(ev, () => dropZone.classList.remove('is-drag')));
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('is-drag');
+        const input = dropZone.querySelector('input[type=file]');
+        input.files = e.dataTransfer.files;
+        input.dispatchEvent(new Event('change'));
+      });
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+      if (e.key === '/') {
+        const search = document.querySelector('input[name="search"]');
+        if (search) { e.preventDefault(); search.focus(); }
+      }
+      if ((e.key === 'u' || e.key === 'U') && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        document.getElementById('uploadModal').showModal();
+      }
+      if (e.key === 'Escape') {
+        document.getElementById('uploadModal').close();
+      }
+    });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

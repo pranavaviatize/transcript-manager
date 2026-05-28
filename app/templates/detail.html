@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}{{ transcript.title or transcript.filename }} · Transcript Hub{% endblock %}
+
+{% block content %}
+<header class="detail-head fade-up">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem;">
+    <div style="min-width: 0; flex: 1;">
+      <div class="page-eyebrow">
+        <span>Entry N°&nbsp;{{ "%03d"|format(transcript.id) }}</span>
+        {% if transcript.meeting_type %} · <span>{{ transcript.meeting_type.replace('-', ' ') }}</span>{% endif %}
+      </div>
+      <h1 class="detail-title">{{ transcript.title or transcript.filename }}</h1>
+      <div class="detail-meta-row">
+        <span class="status status-{{ transcript.status }}">{{ transcript.status }}</span>
+        <span class="chip"><span class="mono tabular">{{ transcript.word_count }}</span>&nbsp;words</span>
+        {% if transcript.duration_minutes %}<span class="chip"><span class="mono tabular">{{ transcript.duration_minutes }}</span>&nbsp;min</span>{% endif %}
+        {% if transcript.meeting_date %}<span class="chip">{{ transcript.meeting_date.strftime('%B %d, %Y') }}</span>{% endif %}
+        {% if transcript.sentiment and transcript.sentiment != 'neutral' %}<span class="chip">{{ transcript.sentiment }}</span>{% endif %}
+      </div>
+      {% if transcript.participants or transcript.tags %}
+      <div class="detail-tags">
+        {% for p in transcript.participants %}
+        <span class="chip chip-dot" style="--chip-dot-color: var(--accent)">{{ p.name }}</span>
+        {% endfor %}
+        {% for tag in transcript.tags %}
+        <span class="pill" style="--pill-color: {{ tag.color }}">{{ tag.name }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="page-actions">
+      <a href="/api/transcripts/{{ transcript.id }}/export.md" class="btn btn-ghost">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v9M4 8l4 4 4-4M2 14h12"/></svg>
+        Export
+      </a>
+      <button class="btn btn-danger" hx-delete="/api/transcripts/{{ transcript.id }}"
+              hx-confirm="Delete this transcript? This cannot be undone."
+              hx-target="body" hx-push-url="/transcripts">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h10M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1M5 4l1 9a1 1 0 001 1h2a1 1 0 001-1l1-9"/></svg>
+        Delete
+      </button>
+    </div>
+  </div>
+</header>
+
+{% if transcript.status == 'processing' %}
+<section class="card fade-up fade-up-1" style="margin-bottom: 2rem; text-align: center; padding: 3rem 2rem; border-style: dashed;">
+  <div class="empty-mark" style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+  <h3 class="empty-title" style="font-size: 1.2rem;">Enrichment in progress</h3>
+  <p class="empty-sub">The AI is reading through this transcript to extract decisions, action items, and code. This page will refresh automatically.</p>
+</section>
+{% endif %}
+
+{% if transcript.status == 'failed' %}
+<section class="card fade-up fade-up-1" style="margin-bottom: 2rem; border-color: var(--status-failed); background: var(--status-failed-bg);">
+  <div style="display: flex; align-items: center; gap: 1rem;">
+    <div style="font-size: 1.5rem; color: var(--status-failed);">⚠</div>
+    <div style="flex: 1;">
+      <strong style="color: var(--status-failed);">Enrichment failed</strong>
+      <p class="muted" style="font-size: 13px; margin-top: 0.25rem;">The AI couldn't process this transcript. Check the server logs or your OPENROUTER_API_KEY.</p>
+    </div>
+    <button class="btn btn-ghost" hx-post="/api/transcripts/{{ transcript.id }}/enrich" hx-swap="none"
+            hx-on::after-request="location.reload()">Retry</button>
+  </div>
+</section>
+{% endif %}
+
+{% if transcript.summary %}
+<section class="summary-card fade-up fade-up-1">
+  <span class="summary-label">Summary</span>
+  <p class="summary-text">{{ transcript.summary }}</p>
+</section>
+{% endif %}
+
+<div class="detail-grid">
+  {% if transcript.speaker_stats %}
+  <section class="panel fade-up fade-up-2">
+    <header class="panel-head">
+      <h3 class="panel-title">Speaker Breakdown <span class="panel-title-count">{{ transcript.speaker_stats|length }}</span></h3>
+    </header>
+    <div class="panel-body">
+      {% set max_words = transcript.speaker_stats|map(attribute='word_count')|max %}
+      {% for stat in transcript.speaker_stats|sort(attribute='word_count', reverse=true) %}
+      <div class="speaker-row">
+        <div class="speaker-name">{{ stat.speaker_name }}</div>
+        <div class="speaker-bar"><div class="speaker-bar-fill" style="width: {{ (stat.word_count / max_words * 100)|int }}%;"></div></div>
+        <div class="speaker-stats">{{ stat.word_count }}w · {{ stat.estimated_minutes }}m</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if transcript.decisions %}
+  <section class="panel fade-up fade-up-3">
+    <header class="panel-head">
+      <h3 class="panel-title">Decisions <span class="panel-title-count">{{ transcript.decisions|length }}</span></h3>
+    </header>
+    <div class="panel-body">
+      {% for d in transcript.decisions %}
+      <div class="decision-item">
+        <div class="decision-cat">{{ d.category }}</div>
+        <div class="decision-text">{{ d.text }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+
+{% if transcript.action_items %}
+<section class="panel fade-up fade-up-3" style="margin-bottom: 1.5rem;">
+  <header class="panel-head">
+    <h3 class="panel-title">Action Items <span class="panel-title-count">{{ transcript.action_items|length }}</span></h3>
+  </header>
+  <div class="panel-body">
+    {% for ai in transcript.action_items %}
+    <label class="action-item {% if ai.completed %}action-completed{% endif %}">
+      <input type="checkbox" class="action-checkbox" {% if ai.completed %}checked{% endif %}
+             hx-patch="/api/action-items/{{ ai.id }}" hx-swap="none"
+             hx-on::after-request="this.closest('.action-item').classList.toggle('action-completed', this.checked)">
+      <span class="action-text">{{ ai.text }}</span>
+      <span class="action-tags">
+        {% if ai.assignee %}<span class="chip chip-dot" style="--chip-dot-color: var(--accent)">@{{ ai.assignee }}</span>{% endif %}
+        {% if ai.priority == 'high' %}<span class="pill" style="--pill-color: var(--color-priority-high)">High</span>{% endif %}
+        {% if ai.priority == 'urgent' %}<span class="pill" style="--pill-color: var(--color-priority-urgent)">Urgent</span>{% endif %}
+      </span>
+    </label>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if transcript.code_blocks %}
+<section class="panel fade-up fade-up-4" style="margin-bottom: 1.5rem;">
+  <header class="panel-head">
+    <h3 class="panel-title">Code Snippets <span class="panel-title-count">{{ transcript.code_blocks|length }}</span></h3>
+  </header>
+  <div class="panel-body">
+    {% for cb in transcript.code_blocks %}
+    <div class="code-block">
+      {% if cb.context %}<div class="code-context">{{ cb.context }}</div>{% endif %}
+      <div class="code-head">
+        <span class="code-lang">{{ cb.language or 'text' }}</span>
+        <button class="copy-btn" onclick="navigator.clipboard.writeText(this.parentElement.nextElementSibling.querySelector('code').innerText); this.textContent='Copied ✓'; setTimeout(()=>this.textContent='Copy', 1200);">Copy</button>
+      </div>
+      <pre><code>{{ cb.code }}</code></pre>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="panel fade-up fade-up-4">
+  <header class="panel-head">
+    <h3 class="panel-title">Full Transcript</h3>
+  </header>
+  <div class="panel-body" style="padding: 0;">
+    <div class="transcript-body">{{ transcript.content_clean }}</div>
+  </div>
+</section>
+
+{% if transcript.status == 'processing' %}
+<div id="pollStatus" hx-get="/api/transcripts/{{ transcript.id }}" hx-trigger="every 3s" hx-swap="none"
+     hx-on::after-request="if(event.detail.successful) { const s = JSON.parse(event.detail.xhr.response).status; if(s === 'completed' || s === 'failed') location.reload(); }"></div>
+{% endif %}
+{% endblock %}

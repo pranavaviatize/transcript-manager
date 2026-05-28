@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}All Transcripts · Transcript Hub{% endblock %}
+
+{% block content %}
+<header class="page-head fade-up">
+  <div>
+    <div class="page-eyebrow">The Archive</div>
+    <h1 class="page-title">All Transcripts</h1>
+    <p class="page-subtitle">Search across every meeting, then filter down by participant, date, type, or content signal.</p>
+  </div>
+  <div class="page-actions">
+    <button class="btn btn-primary" onclick="document.getElementById('uploadModal').showModal()">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v10M3 8h10"/></svg>
+      New Transcript
+    </button>
+  </div>
+</header>
+
+<div class="filter-rail fade-up fade-up-1">
+  <div class="search-box">
+    <input type="search" name="search" placeholder="Search transcripts, summaries, content…"
+           hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="keyup changed delay:300ms, search"
+           hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']"
+           hx-indicator="#listSpinner">
+  </div>
+  <input type="date" name="date_from" aria-label="From date"
+         hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
+         hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+  <input type="date" name="date_to" aria-label="To date"
+         hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
+         hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+  <select name="meeting_type" aria-label="Meeting type"
+          hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
+          hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+    <option value="">All Types</option>
+    <option value="standup">Standup</option>
+    <option value="code-review">Code Review</option>
+    <option value="architecture">Architecture</option>
+    <option value="planning">Planning</option>
+    <option value="retro">Retro</option>
+    <option value="1-1">1-1</option>
+    <option value="interview">Interview</option>
+    <option value="demo">Demo</option>
+    <option value="bug-triage">Bug Triage</option>
+    <option value="general">General</option>
+  </select>
+  <select name="sort_by" aria-label="Sort by"
+          hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
+          hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+    <option value="created_at">Sort: Added</option>
+    <option value="meeting_date">Sort: Meeting Date</option>
+    <option value="word_count">Sort: Length</option>
+    <option value="title">Sort: Title</option>
+  </select>
+  <select name="sort_order" aria-label="Sort order"
+          hx-get="/partials/transcript-list" hx-target="#transcriptList" hx-trigger="change"
+          hx-include="[name='search'],[name='date_from'],[name='date_to'],[name='meeting_type'],[name='sort_by'],[name='sort_order']">
+    <option value="desc">Newest</option>
+    <option value="asc">Oldest</option>
+  </select>
+</div>
+
+<div class="fade-up fade-up-2">
+  <span id="listSpinner" class="htmx-indicator inline-spinner" style="margin-bottom: 0.5rem; display: none;">Loading…</span>
+  <div id="transcriptList" hx-get="/partials/transcript-list" hx-trigger="load" hx-target="#transcriptList">
+    <div class="skeleton">
+      {% for i in range(5) %}
+      <div class="skeleton-row">
+        <div class="skeleton-block sk-tag" style="height: 0.8rem; width: 50px;"></div>
+        <div style="width: 100%;">
+          <div class="skeleton-block sk-h"></div>
+          <div class="skeleton-block sk-h2"></div>
+          <div class="skeleton-block sk-h3"></div>
+        </div>
+        <div class="skeleton-block sk-tag"></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
