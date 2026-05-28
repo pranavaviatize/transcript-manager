@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     ai_model: str = "google/gemini-2.0-flash-001"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
+    auth_key: str = ""
+    session_secret: str = ""
 
     class Config:
         env_file = ".env"

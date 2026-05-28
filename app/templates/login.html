@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in · Transcript Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Geist:wght@300..700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/static/css/app.css">
+  <style>
+    body { display: grid; place-items: center; min-height: 100vh; padding: 2rem; }
+    .login-card {
+      width: min(420px, 100%);
+      padding: 2.5rem;
+      background: var(--bg-card, #1a1a1a);
+      border: 1px solid var(--border, #2a2a2a);
+      border-radius: 12px;
+      box-shadow: 0 24px 60px -20px rgba(0,0,0,0.6);
+    }
+    .login-card h1 { margin: 0.25rem 0 0.5rem; font-family: 'Fraunces', serif; font-weight: 400; }
+    .login-card p.lede { color: var(--text-dim, #888); margin: 0 0 1.5rem; font-size: 0.9rem; }
+    .login-card form { display: flex; flex-direction: column; gap: 0.75rem; }
+    .login-card .error { color: var(--status-failed, #d56b6b); font-size: 0.85rem; margin: 0; }
+    .login-card .brand-mark { font-size: 1.5rem; color: var(--accent, #e8a444); }
+  </style>
+</head>
+<body>
+  <div class="bg-grain" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <article class="login-card">
+    <div class="brand-mark" aria-hidden="true">✻</div>
+    <div class="eyebrow">Transcript Hub</div>
+    <h1>Enter access key</h1>
+    <p class="lede">This instance is private. Provide the shared key to continue.</p>
+
+    <form method="post" action="/login" autocomplete="off">
+      <input type="hidden" name="next" value="{{ next }}">
+      <input
+        class="input"
+        type="password"
+        name="key"
+        placeholder="Access key"
+        autofocus
+        required
+      >
+      {% if error %}
+      <p class="error">{{ error }}</p>
+      {% endif %}
+      <button type="submit" class="btn btn-primary">Sign in</button>
+    </form>
+  </article>
+</body>
+</html>
