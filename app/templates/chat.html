@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Ask · Transcript Hub{% endblock %}
+
+{% block content %}
+<header class="page-head fade-up">
+  <div>
+    <div class="page-eyebrow">Ask the Archive</div>
+    <h1 class="page-title">Ask</h1>
+    <p class="page-subtitle">Plain-language questions, answered from your transcripts — every claim links back to its source.</p>
+  </div>
+  <div class="page-actions">
+    <button type="button" id="chatNew" class="btn btn-ghost chat-tool">
+      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8 3.25v9.5M3.25 8h9.5"/></svg>
+      New chat
+    </button>
+    <div class="chat-history-wrap">
+      <button type="button" id="chatHistoryToggle" class="btn btn-ghost chat-tool" aria-expanded="false" aria-haspopup="true">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.25"/><path d="M8 4.5V8l2.5 1.5"/></svg>
+        History
+      </button>
+      <div id="chatHistory" class="chat-history" role="menu" hidden>
+        <div class="chat-history-head">Conversations</div>
+        <div class="chat-history-list">
+          <div class="chat-history-empty muted">No saved conversations yet.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="chat is-empty fade-up fade-up-1" id="chat">
+  <div id="chatThread" class="chat-thread" aria-live="polite">
+    <div class="chat-empty">
+      <div class="empty-mark" aria-hidden="true">✻</div>
+      <h2 class="chat-empty-title">Ask anything about your meetings</h2>
+      <p class="chat-empty-sub">Decisions, action items, who-said-what — answered from your transcripts, with a link back to every source.</p>
+    </div>
+  </div>
+
+  <form id="chatForm" class="chat-composer" autocomplete="off">
+    <div class="chat-field">
+      <textarea id="chatInput" class="chat-input" rows="1" placeholder="Ask a question about your transcripts…" autofocus required></textarea>
+      <button type="submit" class="chat-send" aria-label="Send question" disabled>
+        <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12.75V4M4.25 7.75 8 4l3.75 3.75"/></svg>
+      </button>
+    </div>
+    <div class="chat-hint">
+      <span><kbd>↵</kbd> send</span>
+      <span><kbd>⇧</kbd> <kbd>↵</kbd> new line</span>
+      <span class="chat-hint-note">Answers are grounded in your transcripts.</span>
+    </div>
+  </form>
+
+  <div class="chat-suggestions" id="chatSuggestions">
+    <span class="chat-suggestions-label">Try asking</span>
+    <div class="chat-suggest-grid">
+      <button type="button" class="chat-suggest">What did we decide about the edit function?</button>
+      <button type="button" class="chat-suggest">List all action items for Pranav</button>
+      <button type="button" class="chat-suggest">Summarise the most recent meeting</button>
+      <button type="button" class="chat-suggest">What open questions or risks came up?</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/chat.js"></script>
+{% endblock %}

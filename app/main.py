@@ -6,8 +6,8 @@ import os
 import secrets
 import logging
 
-from app.database import engine, Base, init_fts
-from app.routers import api, web, auth as auth_router
+from app.database import engine, Base, init_fts, init_vec, init_chunks_fts
+from app.routers import api, web, chat, auth as auth_router
 from app.auth import AuthMiddleware
 from app.config import get_settings
 
@@ -19,6 +19,8 @@ os.makedirs("data", exist_ok=True)
 
 Base.metadata.create_all(bind=engine)
 init_fts()
+init_vec()
+init_chunks_fts()
 
 
 @asynccontextmanager
@@ -42,3 +44,4 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(auth_router.router)
 app.include_router(api.router)
 app.include_router(web.router)
+app.include_router(chat.router)

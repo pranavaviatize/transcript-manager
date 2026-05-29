@@ -104,6 +104,12 @@ async def _enrich_in_background(transcript_id: int):
 
         transcript.status = "completed"
         db.commit()
+
+        try:
+            from app.services.indexer import index_transcript
+            await index_transcript(db, transcript_id)
+        except Exception:
+            logger.exception("Indexing failed for transcript %s (enrichment still succeeded)", transcript_id)
     except Exception as e:
         logger.exception("Background enrichment failed for transcript %s: %s", transcript_id, e)
         try:
@@ -303,6 +309,12 @@ async def enrich_transcript_endpoint(transcript_id: int, db: Session = Depends(g
 
     transcript.status = "completed"
     db.commit()
+
+    try:
+        from app.services.indexer import index_transcript
+        await index_transcript(db, transcript_id)
+    except Exception:
+        logger.exception("Indexing failed for transcript %s (enrichment still succeeded)", transcript_id)
 
     return {"status": "completed"}
 

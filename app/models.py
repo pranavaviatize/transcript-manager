@@ -44,6 +44,7 @@ class Transcript(Base):
     decisions = relationship("Decision", back_populates="transcript", cascade="all, delete-orphan")
     speaker_stats = relationship("SpeakerStat", back_populates="transcript", cascade="all, delete-orphan")
     images = relationship("Image", back_populates="transcript", cascade="all, delete-orphan", order_by="Image.created_at")
+    chunks = relationship("TranscriptChunk", back_populates="transcript", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_transcripts_status", "status"),
@@ -133,3 +134,55 @@ class SpeakerStat(Base):
     estimated_minutes = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
     transcript = relationship("Transcript", back_populates="speaker_stats")
+
+
+class TranscriptChunk(Base):
+    __tablename__ = "transcript_chunks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    transcript_id = Column(Integer, ForeignKey("transcripts.id", ondelete="CASCADE"), nullable=False)
+    chunk_index = Column(Integer, nullable=False)
+    speaker = Column(String(255), nullable=True)
+    start_word = Column(Integer, default=0)
+    end_word = Column(Integer, default=0)
+    content = Column(Text, nullable=False)
+    token_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    transcript = relationship("Transcript", back_populates="chunks")
+
+    __table_args__ = (
+        Index("idx_chunks_transcript", "transcript_id"),
+    )
+
+
+class ChatSession(Base):
+    __tablename__ = "chat_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), default="New chat")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    messages = relationship(
+        "ChatMessage",
+        back_populates="session",
+        cascade="all, delete-orphan",
+        order_by="ChatMessage.id",
+    )
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(Integer, ForeignKey("chat_sessions.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String(20), nullable=False)  # user | assistant
+    content = Column(Text, nullable=False)
+    sources = Column(Text, default="")  # JSON array of {id, title} for assistant turns
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    session = relationship("ChatSession", back_populates="messages")
+
+    __table_args__ = (
+        Index("idx_chat_messages_session", "session_id"),
+    )

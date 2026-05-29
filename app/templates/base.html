@@ -26,23 +26,24 @@
     <nav class="nav-primary" aria-label="Primary">
       <div class="nav-label">Library</div>
       <ul>
-        <li><a href="/recall" class="nav-link {% if request.url.path == '/recall' %}is-active{% endif %}"><span class="nav-num">00</span> Recall</a></li>
-        <li><a href="/" class="nav-link {% if request.url.path == '/' %}is-active{% endif %}"><span class="nav-num">01</span> Dashboard</a></li>
-        <li><a href="/transcripts" class="nav-link {% if request.url.path == '/transcripts' %}is-active{% endif %}"><span class="nav-num">02</span> All Transcripts</a></li>
-        <li><a href="/tags" class="nav-link {% if request.url.path == '/tags' %}is-active{% endif %}"><span class="nav-num">03</span> Manage Tags</a></li>
+        <li><a href="/chat" class="nav-link {% if request.url.path == '/chat' %}is-active{% endif %}"><span class="nav-num">00</span> Ask</a></li>
+        <li><a href="/recall" class="nav-link {% if request.url.path == '/recall' %}is-active{% endif %}"><span class="nav-num">01</span> Recall</a></li>
+        <li><a href="/" class="nav-link {% if request.url.path == '/' %}is-active{% endif %}"><span class="nav-num">02</span> Dashboard</a></li>
+        <li><a href="/transcripts" class="nav-link {% if request.url.path == '/transcripts' %}is-active{% endif %}"><span class="nav-num">03</span> All Transcripts</a></li>
+        <li><a href="/tags" class="nav-link {% if request.url.path == '/tags' %}is-active{% endif %}"><span class="nav-num">04</span> Manage Tags</a></li>
       </ul>
 
       <div class="nav-label">Extracts</div>
       <ul>
         <li>
           <a href="/action-items" class="nav-link {% if request.url.path == '/action-items' %}is-active{% endif %}">
-            <span class="nav-num">04</span> Action Items
+            <span class="nav-num">05</span> Action Items
             {% if counts and counts.action_items %}<span class="nav-link-count">{{ counts.action_items }}</span>{% endif %}
           </a>
         </li>
         <li>
           <a href="/decisions" class="nav-link {% if request.url.path == '/decisions' %}is-active{% endif %}">
-            <span class="nav-num">05</span> Decisions
+            <span class="nav-num">06</span> Decisions
             {% if counts and counts.decisions %}<span class="nav-link-count">{{ counts.decisions }}</span>{% endif %}
           </a>
         </li>

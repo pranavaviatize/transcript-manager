@@ -16,6 +16,7 @@ from app.models import (
     transcript_participants,
 )
 from app.templating import templates
+from app.services.retrieval import search_transcripts_fts
 
 router = APIRouter()
 
@@ -439,19 +440,16 @@ async def recall_results_partial(
         .all()
     )
 
-    transcripts_raw = (
-        db.query(Transcript)
-        .filter(
-            or_(
-                Transcript.title.ilike(like),
-                Transcript.summary.ilike(like),
-                Transcript.content_clean.ilike(like),
-            )
-        )
-        .order_by(desc(Transcript.meeting_date), desc(Transcript.created_at))
-        .limit(20)
-        .all()
-    )
+    # BM25-ranked transcript matches from the synced FTS5 index (falls back to none).
+    transcript_ids = search_transcripts_fts(db, query_text, limit=20)
+    if transcript_ids:
+        by_id = {
+            t.id: t
+            for t in db.query(Transcript).filter(Transcript.id.in_(transcript_ids)).all()
+        }
+        transcripts_raw = [by_id[i] for i in transcript_ids if i in by_id]
+    else:
+        transcripts_raw = []
 
     transcript_hits = []
     for t in transcripts_raw:
