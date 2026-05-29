@@ -113,7 +113,13 @@ async def _enrich_chunk(text: str, settings: Settings, context_block: str = "") 
             )
             resp.raise_for_status()
             data = resp.json()
-            content = data["choices"][0]["message"]["content"]
+            content = data["choices"][0]["message"].get("content")
+
+            if content is None:
+                refusal = data["choices"][0]["message"].get("refusal")
+                finish_reason = data["choices"][0].get("finish_reason")
+                print(f"AI enrichment failed: content is None (refusal={refusal}, finish_reason={finish_reason})")
+                return None
 
             content = re.sub(r"^```json\s*", "", content)
             content = re.sub(r"```\s*$", "", content)

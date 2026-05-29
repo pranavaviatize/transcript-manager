@@ -1,7 +1,8 @@
-{
-    auto_https off
+:443 {
+    tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+    reverse_proxy app:8000
 }
 
 :80 {
-    reverse_proxy app:8000
+    redir https://{host}{uri}
 }
