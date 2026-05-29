@@ -128,10 +128,20 @@
   </header>
   <div class="panel-body">
     {% if transcript.images %}
+    <script type="application/json" id="imageData">
+[
+{% for img in transcript.images %}
+  {"id": {{ img.id }}, "filename": {{ img.original_filename | tojson }}, "caption": {{ (img.caption or "") | tojson }}}{{ "," if not loop.last }}
+{% endfor %}
+]
+    </script>
     <div class="image-grid">
       {% for img in transcript.images %}
-      <figure class="image-tile" onclick="document.getElementById('imgViewer').src='/api/images/{{ img.id }}/file';document.getElementById('imgViewerDialog').showModal();">
+      <figure class="image-tile" data-index="{{ loop.index0 }}">
         <img src="/api/images/{{ img.id }}/file" alt="{{ img.original_filename }}" loading="lazy">
+        <span class="image-tile-expand" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4"/></svg>
+        </span>
         <button type="button" class="image-tile-delete" aria-label="Delete image"
                 onclick="event.stopPropagation();"
                 hx-delete="/api/images/{{ img.id }}"
@@ -216,8 +226,38 @@ async function copyTranscript(btn) {
      hx-on::after-request="if(event.detail.successful) { const s = JSON.parse(event.detail.xhr.response).status; if(s === 'completed' || s === 'failed') location.reload(); }"></div>
 {% endif %}
 
-<dialog id="imgViewerDialog" class="image-viewer" onclick="this.close()">
-  <img id="imgViewer" alt="">
+<dialog id="imgViewerDialog" class="iv" aria-label="Image viewer">
+  <div class="iv-shell">
+    <header class="iv-bar">
+      <div class="iv-bar-left">
+        <span class="iv-counter" id="ivCounter" aria-live="polite">1 / 1</span>
+        <span class="iv-filename" id="ivName"></span>
+      </div>
+      <div class="iv-bar-right">
+        <button type="button" class="icon-btn iv-zoom" id="ivZoom" aria-label="Toggle zoom" aria-pressed="false">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5L14 14M5 7h4M7 5v4"/></svg>
+        </button>
+        <a class="icon-btn" id="ivDownload" download href="#" aria-label="Download image">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 13h10"/></svg>
+        </a>
+        <button type="button" class="icon-btn" id="ivClose" aria-label="Close">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3l10 10M13 3L3 13"/></svg>
+        </button>
+      </div>
+    </header>
+    <div class="iv-stage" id="ivStage">
+      <button type="button" class="iv-nav iv-nav-prev" id="ivPrev" aria-label="Previous image">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3L5 8l5 5"/></svg>
+      </button>
+      <div class="iv-loader" id="ivLoader" aria-hidden="true"></div>
+      <img class="iv-img" id="ivImg" alt="">
+      <button type="button" class="iv-nav iv-nav-next" id="ivNext" aria-label="Next image">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3l5 5-5 5"/></svg>
+      </button>
+    </div>
+    <p class="iv-caption" id="ivCaption"></p>
+    <div class="iv-filmstrip" id="ivStrip" aria-label="Image thumbnails"></div>
+  </div>
 </dialog>
 
 <script>
@@ -235,4 +275,6 @@ async function copyTranscript(btn) {
     });
   })();
 </script>
+
+<script src="/static/js/image-viewer.js"></script>
 {% endblock %}
