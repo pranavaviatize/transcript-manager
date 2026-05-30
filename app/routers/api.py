@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Request, BackgroundTasks, Body
 from fastapi.responses import HTMLResponse, PlainTextResponse, StreamingResponse, FileResponse
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func, desc, asc, or_, and_, text
 from typing import List, Optional
 from datetime import datetime
@@ -338,11 +338,11 @@ async def list_transcripts(
     db: Session = Depends(get_db),
 ):
     query = db.query(Transcript).options(
-        joinedload(Transcript.participants),
-        joinedload(Transcript.tags),
-        joinedload(Transcript.action_items),
-        joinedload(Transcript.decisions),
-        joinedload(Transcript.code_blocks),
+        selectinload(Transcript.participants),
+        selectinload(Transcript.tags),
+        selectinload(Transcript.action_items),
+        selectinload(Transcript.decisions),
+        selectinload(Transcript.code_blocks),
     )
 
     if search:
@@ -403,13 +403,13 @@ async def list_transcripts(
 @router.get("/api/transcripts/{transcript_id}", response_model=TranscriptDetail)
 async def get_transcript(transcript_id: int, db: Session = Depends(get_db)):
     t = db.query(Transcript).options(
-        joinedload(Transcript.participants),
-        joinedload(Transcript.tags),
-        joinedload(Transcript.action_items),
-        joinedload(Transcript.code_blocks),
-        joinedload(Transcript.decisions),
-        joinedload(Transcript.speaker_stats),
-        joinedload(Transcript.images),
+        selectinload(Transcript.participants),
+        selectinload(Transcript.tags),
+        selectinload(Transcript.action_items),
+        selectinload(Transcript.code_blocks),
+        selectinload(Transcript.decisions),
+        selectinload(Transcript.speaker_stats),
+        selectinload(Transcript.images),
     ).filter(Transcript.id == transcript_id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Not found")
@@ -762,12 +762,12 @@ async def get_stats(db: Session = Depends(get_db)):
 @router.get("/api/transcripts/{transcript_id}/export.md")
 async def export_markdown(transcript_id: int, db: Session = Depends(get_db)):
     t = db.query(Transcript).options(
-        joinedload(Transcript.participants),
-        joinedload(Transcript.tags),
-        joinedload(Transcript.action_items),
-        joinedload(Transcript.code_blocks),
-        joinedload(Transcript.decisions),
-        joinedload(Transcript.speaker_stats),
+        selectinload(Transcript.participants),
+        selectinload(Transcript.tags),
+        selectinload(Transcript.action_items),
+        selectinload(Transcript.code_blocks),
+        selectinload(Transcript.decisions),
+        selectinload(Transcript.speaker_stats),
     ).filter(Transcript.id == transcript_id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Not found")

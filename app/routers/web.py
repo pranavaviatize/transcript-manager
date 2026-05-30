@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Depends, HTTPException, Query
 from fastapi.responses import HTMLResponse
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import desc, asc, or_, func
 from typing import Optional, List
 from datetime import datetime
@@ -99,13 +99,13 @@ async def tags_page(request: Request, db: Session = Depends(get_db)):
 @router.get("/transcripts/{transcript_id}", response_class=HTMLResponse)
 async def transcript_detail_page(transcript_id: int, request: Request, db: Session = Depends(get_db)):
     t = db.query(Transcript).options(
-        joinedload(Transcript.participants),
-        joinedload(Transcript.tags),
-        joinedload(Transcript.action_items),
-        joinedload(Transcript.code_blocks),
-        joinedload(Transcript.decisions),
-        joinedload(Transcript.speaker_stats),
-        joinedload(Transcript.images),
+        selectinload(Transcript.participants),
+        selectinload(Transcript.tags),
+        selectinload(Transcript.action_items),
+        selectinload(Transcript.code_blocks),
+        selectinload(Transcript.decisions),
+        selectinload(Transcript.speaker_stats),
+        selectinload(Transcript.images),
     ).filter(Transcript.id == transcript_id).first()
     if not t:
         raise HTTPException(status_code=404, detail="Not found")
@@ -159,11 +159,11 @@ async def transcript_list_partial(
     has_code_b = _parse_optional_bool(has_code)
 
     query = db.query(Transcript).options(
-        joinedload(Transcript.participants),
-        joinedload(Transcript.tags),
-        joinedload(Transcript.action_items),
-        joinedload(Transcript.decisions),
-        joinedload(Transcript.code_blocks),
+        selectinload(Transcript.participants),
+        selectinload(Transcript.tags),
+        selectinload(Transcript.action_items),
+        selectinload(Transcript.decisions),
+        selectinload(Transcript.code_blocks),
     )
 
     if search:
